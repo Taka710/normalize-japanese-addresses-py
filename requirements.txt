@@ -1,0 +1,6 @@
+numpy==1.20.2
+kanjize==1.0.0
+pytest==6.2.3
+requests==2.25.1
+pandas==1.2.4
+requests_cache==0.6.3
