@@ -1,21 +1,27 @@
 import re
 import json
 
-from .library.api import apiFetch
-from .library.regex import getPrefectureRegexes, getCityRegexes, getTownRegexes, replace_addr
+from .library.regex import getPrefectures, getPrefectureRegexes, getCityRegexes, replace_addr, normalizeTownName
+from .library.patchAddr import patchAddr
 from .library.utils import zen2han
 
 SPACE = ' '
 HYPHEN = '-'
 
 
-def normalize(address: str, level: int = 3):
+def normalize(address: str, **kwargs):
     """
     住所正規化
     :param address: 住所
-    :param level: 正規化レベル（0:正規化不可 1:都道府県 2:市区町村 3:丁番地以降）
+    :param kwargs: オプション（level:正規化レベル）
     :return: 正規化後の住所
     """
+
+    # オプションの設定
+    if "level" in kwargs:
+        level = kwargs["level"]
+    else:
+        level = 3
 
     pref = ''
     city = ''
@@ -56,7 +62,7 @@ def normalize(address: str, level: int = 3):
         break
 
     # 都道府県の正規化
-    response_prefs = apiFetch()
+    response_prefs = getPrefectures()
     prefectures: dict = json.loads(response_prefs.text)
     prefs: list = list(prefectures.keys())
     for _pref, reg in getPrefectureRegexes(prefs):
@@ -64,6 +70,39 @@ def normalize(address: str, level: int = 3):
             pref = _pref
             addr = addr[len(pref):]
             break
+
+    if pref == '':
+        # 都道府県が省略されている
+        matched = []
+
+        for _pref, cities in prefectures.items():
+
+            addr = addr.strip()
+            for _city, reg in getCityRegexes(_pref, cities):
+                match = reg.match(addr)
+                if match is not None:
+                    matched.append(
+                        {
+                            'pref': _pref,
+                            'city': _city,
+                            'addr': addr[len(match.group()):]
+                        }
+                    )
+
+        # マッチする都道府県が複数ある場合は町名まで正規化して都道府県名を判別する。（例: 東京都府中市と広島県府中市など）
+        if len(matched) == 1:
+            pref = matched[0]['pref']
+        else:
+            for match in matched:
+                normalized = normalizeTownName(
+                    match['addr'],
+                    match['pref'],
+                    match['city']
+                )
+
+                if normalized is not None:
+                    pref = match['pref']
+                    break
 
     # 市区町村の正規化
     if pref != '' and level >= 2:
@@ -78,15 +117,14 @@ def normalize(address: str, level: int = 3):
 
     # 町丁目以降の正規化
     if city != '' and level >= 3:
-        addr = re.sub('^大字', '', addr)
-
-        for reg_list in getTownRegexes(pref, city):
-            if reg_list[1].match(addr) is not None:
-                town = reg_list[0]
-                addr = addr[len(reg_list[1].match(addr).group()):]
-                break
+        normalized = normalizeTownName(addr, pref, city)
+        if normalized is not None:
+            town = normalized['town']
+            addr = normalized['addr']
 
         addr = replace_addr(addr)
+
+    addr = patchAddr(pref, city, town, addr)
 
     # 戻り値のレベルを設定
     ref_level = ref_level + 1 if len(pref) > 0 else ref_level

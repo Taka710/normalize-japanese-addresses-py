@@ -69,31 +69,33 @@ def findKanjiNumbers(text: str):
         if item is None:
             return False
 
-        if len(item) > 0 and '兆' != item and '億' != item and '万' != item and '萬' != item:
+        if re.match('^[0-9０-９]+$', item) is None and (
+                len(item) > 0 and '兆' != item and '億' != item and '万' != item and '萬' != item):
             return True
         else:
             return False
 
-    basePattern = '([0-9０-９一二三四五六七八九壱壹弐貳貮参參肆伍陸漆捌玖]*(千|阡|仟))?([0-9０-９一二三四五六七八九壱壹弐貳貮参參肆伍陸漆捌玖]*(百|陌|佰))?([' \
-                  '0-9０-９一二三四五六七八九壱壹弐貳貮参參肆伍陸漆捌玖]*(十|拾))?([0-9０-９〇一二三四五六七八九壱壹弐貳貮参參肆伍陸漆捌玖]+)?'
-
-    pattern = f'({basePattern}兆)?({basePattern}億)?({basePattern}(万 | 萬))?{basePattern}'
-
+    num = '([0-9０-９]*)|([〇一二三四五六七八九壱壹弐貳貮参參肆伍陸漆捌玖]*)'
+    basePattern = f'(({num})(千|阡|仟))?(({num})(百|陌|佰))?(({num})(十|拾))?({num})?'
+    pattern = f'(({basePattern}兆)?({basePattern}億)?({basePattern}(万|萬))?{basePattern})'
     regex = re.compile(pattern)
 
     match = regex.finditer(text)
+
+    match_kanji = ""
+    return_kanji = []
     if match is not None:
-        return_match = []
         for m in match:
             if isItemLength(m.group()):
-                return_match.append(m.group())
-        return return_match
-    else:
-        return []
+                match_kanji += m.group()
+
+        if len(match_kanji) > 0:
+            return_kanji.append(match_kanji)
+    return return_kanji
 
 
 def zen2han(value: str):
-    return value\
-        .translate(str.maketrans({chr(0xFF10 + i): chr(0x30 + i) for i in range(10)}))\
-        .translate(str.maketrans({chr(0xFF21 + i): chr(0x41 + i) for i in range(26)}))\
+    return value \
+        .translate(str.maketrans({chr(0xFF10 + i): chr(0x30 + i) for i in range(10)})) \
+        .translate(str.maketrans({chr(0xFF21 + i): chr(0x41 + i) for i in range(26)})) \
         .translate(str.maketrans({chr(0xFF41 + i): chr(0x61 + i) for i in range(26)}))
