@@ -4,7 +4,7 @@ import urllib.parse
 
 import kanjize
 
-from .api import apiFetch, currentConfig
+from .api import apiFetch
 from .utils import kan2num
 
 JIS_OLD_KANJI = '亞,圍,壹,榮,驛,應,櫻,假,會,懷,覺,樂,陷,歡,氣,戲,據,挾,區,徑,溪,輕,藝,儉,圈,權,嚴,恆,國,齋,雜,蠶,殘,兒,實,釋,從,縱,敍,燒,條,剩,壤,釀,眞,盡,醉,髓,聲,竊,' \
@@ -21,11 +21,9 @@ JIS_NEW_KANJI = '亜,囲,壱,栄,駅,応,桜,仮,会,懐,覚,楽,陥,歓,気,戯
                 '険,献,験,効,号,済,冊,桟,賛,歯,湿,写,収,獣,処,称,奨,浄,縄,譲,嘱,慎,粋,随,数,静,専,践,繊,壮,捜,総,臓,堕,帯,滝,担,団,遅,昼,聴,逓,転,当,稲,読,悩,拝,麦,抜,' \
                 '浜,並,弁,舗,褒,万,訳,予,揺,来,竜,塁,隷,恋,楼,鯵,鴬,蛎,撹,竃,潅,諌,頚,砿,蕊,靭,賎,壷,砺,梼,涛,迩,蝿,桧,侭,薮,篭 '.split(',')
 
-japaneseAddressApi = currentConfig['japaneseAddressesApi']
 
-
-def getPrefectures():
-    return apiFetch(f'{japaneseAddressApi}.json')
+def getPrefectures(endpoint):
+    return apiFetch(f'{endpoint}.json')
 
 
 def getPrefectureRegexes(prefs: list):
@@ -46,16 +44,16 @@ def getCityRegexes(pref: str, cities: list):
         yield city, re.compile(f'^{_city}')
 
 
-def getTowns(pref: str, city: str):
-    endpoint = '/'.join([
-        japaneseAddressApi,
+def getTowns(pref: str, city: str, endpoint: str):
+    town_endpoint = '/'.join([
+        endpoint,
         urllib.parse.quote(pref),
         urllib.parse.quote(city),
     ])
-    return list(json.loads((apiFetch(f'{endpoint}.json')).text))
+    return list(json.loads((apiFetch(f'{town_endpoint}.json')).text))
 
 
-def getTownRegexes(pref: str, city: str):
+def getTownRegexes(pref: str, city: str, endpoint):
     def getChomeRegex(match_value: str):
         regexes = [re.sub('(丁目?|番([町丁])|条|軒|線|([のノ])町|地割)', '', match_value)]
 
@@ -78,7 +76,7 @@ def getTownRegexes(pref: str, city: str):
 
         return _regex
 
-    api_towns = getTowns(pref, city)
+    api_towns = getTowns(pref, city, endpoint)
     towns = [d.get("town") for d in api_towns]
     towns.sort(key=len, reverse=True)
 
@@ -193,10 +191,10 @@ def toRegex(value: str):
     return _value
 
 
-def normalizeTownName(addr: str, pref: str, city: str):
+def normalizeTownName(addr: str, pref: str, city: str, endpoint: str):
     addr = addr.strip()
     addr = re.sub('^大字', '', addr)
-    townRegexes = getTownRegexes(pref, city)
+    townRegexes = getTownRegexes(pref, city, endpoint)
 
     for townRegex in townRegexes:
         _town, reg = townRegex[0], townRegex[1]

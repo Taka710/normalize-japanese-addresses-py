@@ -8,6 +8,12 @@ from .library.utils import zen2han
 SPACE = ' '
 HYPHEN = '-'
 
+# japanese-addressesのendpoint
+endpoint = 'https://geolonia.github.io/japanese-addresses/api/ja'
+
+# オプションのレベル設定
+level = 3
+
 
 def normalize(address: str, **kwargs):
     """
@@ -18,16 +24,15 @@ def normalize(address: str, **kwargs):
     """
 
     # オプションの設定
-    if "level" in kwargs:
-        level = kwargs["level"]
-    else:
-        level = 3
+    setOptions(kwargs)
 
+    # 戻り値用
     pref = ''
     city = ''
     town = ''
     ref_level = 0
 
+    # 初期住所設定
     addr = address
 
     # スペース変換
@@ -62,7 +67,7 @@ def normalize(address: str, **kwargs):
         break
 
     # 都道府県の正規化
-    response_prefs = getPrefectures()
+    response_prefs = getPrefectures(endpoint)
     prefectures: dict = json.loads(response_prefs.text)
     prefs: list = list(prefectures.keys())
     for _pref, reg in getPrefectureRegexes(prefs):
@@ -97,7 +102,8 @@ def normalize(address: str, **kwargs):
                 normalized = normalizeTownName(
                     match['addr'],
                     match['pref'],
-                    match['city']
+                    match['city'],
+                    endpoint
                 )
 
                 if normalized is not None:
@@ -117,7 +123,7 @@ def normalize(address: str, **kwargs):
 
     # 町丁目以降の正規化
     if city != '' and level >= 3:
-        normalized = normalizeTownName(addr, pref, city)
+        normalized = normalizeTownName(addr, pref, city, endpoint)
         if normalized is not None:
             town = normalized['town']
             addr = normalized['addr']
@@ -138,3 +144,15 @@ def normalize(address: str, **kwargs):
         'addr': addr,
         'level': ref_level,
     }
+
+
+def setOptions(options: dict):
+    global level
+    global endpoint
+
+    # オプションの設定
+    if "level" in options:
+        level = options["level"]
+
+    if "endpoint" in options:
+        endpoint = options["endpoint"]
