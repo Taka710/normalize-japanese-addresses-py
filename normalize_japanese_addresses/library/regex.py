@@ -21,9 +21,17 @@ JIS_NEW_KANJI = '亜,囲,壱,栄,駅,応,桜,仮,会,懐,覚,楽,陥,歓,気,戯
                 '険,献,験,効,号,済,冊,桟,賛,歯,湿,写,収,獣,処,称,奨,浄,縄,譲,嘱,慎,粋,随,数,静,専,践,繊,壮,捜,総,臓,堕,帯,滝,担,団,遅,昼,聴,逓,転,当,稲,読,悩,拝,麦,抜,' \
                 '浜,並,弁,舗,褒,万,訳,予,揺,来,竜,塁,隷,恋,楼,鯵,鴬,蛎,撹,竃,潅,諌,頚,砿,蕊,靭,賎,壷,砺,梼,涛,迩,蝿,桧,侭,薮,篭 '.split(',')
 
+cache_prefecture = {}
+cache_towns = {}
+
 
 def getPrefectures(endpoint):
-    return apiFetch(f'{endpoint}.json')
+    global cache_prefecture
+    endpoint_url = f'{endpoint}.json'
+    if endpoint_url not in cache_prefecture:
+        cache_prefecture[endpoint_url] = apiFetch(f'{endpoint}.json')
+
+    return cache_prefecture[endpoint_url]
 
 
 def getPrefectureRegexes(prefs: list):
@@ -45,12 +53,19 @@ def getCityRegexes(pref: str, cities: list):
 
 
 def getTowns(pref: str, city: str, endpoint: str):
+    global cache_towns
+
     town_endpoint = '/'.join([
         endpoint,
         urllib.parse.quote(pref),
         urllib.parse.quote(city),
     ])
-    return list(json.loads((apiFetch(f'{town_endpoint}.json')).text))
+
+    endpoint_url = f'{town_endpoint}.json'
+    if endpoint_url not in cache_towns:
+        cache_towns[endpoint_url] = list(json.loads((apiFetch(endpoint_url)).text))
+
+    return cache_towns[endpoint_url]
 
 
 def getTownRegexes(pref: str, city: str, endpoint):
