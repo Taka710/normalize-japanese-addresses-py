@@ -78,7 +78,8 @@ def getTownRegexes(pref: str, city: str):
 
         return _regex
 
-    towns = getTowns(pref, city)
+    api_towns = getTowns(pref, city)
+    towns = [d.get("town") for d in api_towns]
     towns.sort(key=len, reverse=True)
 
     town_regexes = []
