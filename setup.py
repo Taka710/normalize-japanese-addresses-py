@@ -28,7 +28,6 @@ setup(
     packages=setuptools.find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     install_requires=[
         "requests",
-        "requests_cache",
         "kanjize"
     ],
     python_requires=">=3.8",
