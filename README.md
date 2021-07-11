@@ -1,4 +1,6 @@
 ## @Taka710/normalize-japanese-addresses-py
+[![PyPI](https://img.shields.io/pypi/l/normalize_japanese_addresses.svg)](https://pypi.python.org/pypi/normalize_japanese_addresses/)
+[![PyPI](https://img.shields.io/pypi/v/normalize_japanese_addresses.svg)](https://pypi.python.org/pypi/normalize_japanese_addresses/)
 
 オープンソースの住所正規化ライブラリです。
 
