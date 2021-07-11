@@ -689,3 +689,28 @@ def test_normalize_0137():
 def test_normalize_0138():
     assert normalize('香川県丸亀市原田町字東三分一１９２６番地１') == \
            {"pref": "香川県", "city": "丸亀市", "town": "原田町", "addr": "東三分一1926-1", "level": 3}
+
+
+def test_normalize_0139():
+    assert normalize('串本町串本千二百三十四') == \
+           {"pref": "和歌山県", "city": "東牟婁郡串本町", "town": "串本", "addr": "1234", "level": 3}
+
+
+def test_normalize_0140():
+    assert normalize('せたな町北檜山区北檜山１９３') == \
+           {"pref": "北海道", "city": "久遠郡せたな町", "town": "北檜山区北檜山", "addr": "193", "level": 3}
+
+
+def test_normalize_0141():
+    assert normalize('岩手県花巻市十二丁目７０４') == \
+           {"pref": "岩手県", "city": "花巻市", "town": "十二丁目", "addr": "704", "level": 3}
+
+
+def test_normalize_0142():
+    assert normalize('岩手県花巻市12丁目７０４') == \
+           {"pref": "岩手県", "city": "花巻市", "town": "十二丁目", "addr": "704", "level": 3}
+
+
+def test_normalize_0143():
+    assert normalize('岩手県花巻市１２丁目７０４') == \
+           {"pref": "岩手県", "city": "花巻市", "town": "十二丁目", "addr": "704", "level": 3}
