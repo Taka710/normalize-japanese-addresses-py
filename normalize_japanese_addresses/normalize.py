@@ -30,6 +30,8 @@ def normalize(address: str, **kwargs):
     pref = ''
     city = ''
     town = ''
+    lat = None
+    lng = None
     ref_level = 0
 
     # 初期住所設定
@@ -73,7 +75,7 @@ def normalize(address: str, **kwargs):
     for _pref, reg in getPrefectureRegexes(prefs):
         if reg.match(addr):
             pref = _pref
-            addr = addr[len(pref):]
+            addr = addr[len(reg.match(addr)[0]):]
             break
 
     if pref == '':
@@ -110,6 +112,14 @@ def normalize(address: str, **kwargs):
                     pref = match['pref']
                     break
 
+    # 都道府県が省略されている場合に都道府県を抽出（誤検知防止のため、省略
+    if pref == '':
+        for _pref, reg in getPrefectureRegexes(prefs, True):
+            if reg.match(addr):
+                pref = _pref
+                addr = addr[len(reg.match(addr)[0]):]
+                break
+
     # 市区町村の正規化
     if pref != '' and level >= 2:
         cities = prefectures[pref]
@@ -127,6 +137,8 @@ def normalize(address: str, **kwargs):
         if normalized is not None:
             town = normalized['town']
             addr = normalized['addr']
+            lat = normalized['lat']
+            lng = normalized['lng']
 
         addr = replace_addr(addr)
 
@@ -142,6 +154,8 @@ def normalize(address: str, **kwargs):
         'city': city,
         'town': town,
         'addr': addr,
+        'lat': lat,
+        'lng': lng,
         'level': ref_level,
     }
 

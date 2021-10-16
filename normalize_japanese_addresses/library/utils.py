@@ -76,8 +76,8 @@ def findKanjiNumbers(text: str):
             return False
 
     num = '([0-9０-９]*)|([〇一二三四五六七八九壱壹弐貳貮参參肆伍陸漆捌玖]*)'
-    basePattern = f'(({num})(千|阡|仟))?(({num})(百|陌|佰))?(({num})(十|拾))?({num})?'
-    pattern = f'(({basePattern}兆)?({basePattern}億)?({basePattern}(万|萬))?{basePattern})'
+    base_pattern = f'(({num})(千|阡|仟))?(({num})(百|陌|佰))?(({num})(十|拾))?({num})?'
+    pattern = f'(({base_pattern}兆)?({base_pattern}億)?({base_pattern}(万|萬))?{base_pattern})'
     regex = re.compile(pattern)
 
     match = regex.finditer(text)

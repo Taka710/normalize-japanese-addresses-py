@@ -40,5 +40,9 @@ def test_address(addr: str, pref: str, city: str, town: str, other: str):
     level = level + 1 if len(city) > 0 else level
     level = level + 1 if len(town) > 0 else level
 
-    assert normalize(addr) == \
-           {"pref": pref, "city": city, "town": town, "addr": other, "level": level}
+    res = normalize(addr)
+    assert res["pref"] == pref
+    assert res["city"] == city
+    assert res["town"] == town
+    assert res["addr"] == other
+    assert res["level"] == level

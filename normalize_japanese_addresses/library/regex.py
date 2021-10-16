@@ -3,6 +3,7 @@ import json
 import urllib.parse
 
 import kanjize
+from cachetools import cached, TTLCache
 
 from .api import apiFetch
 from .utils import kan2num
@@ -25,6 +26,7 @@ cache_prefecture = {}
 cache_towns = {}
 
 
+@cached(cache=TTLCache(maxsize=300, ttl=60 * 60 * 24 * 7))
 def getPrefectures(endpoint):
     global cache_prefecture
     endpoint_url = f'{endpoint}.json'
@@ -34,11 +36,11 @@ def getPrefectures(endpoint):
     return cache_prefecture[endpoint_url]
 
 
-def getPrefectureRegexes(prefs: list):
+def getPrefectureRegexes(prefs: list, omit_mode: bool = False):
     pref_regex = '([都道府県])'
     for pref in prefs:
         _pref = re.sub(f'{pref_regex}$', '', pref)
-        reg = re.compile(f'^{_pref}{pref_regex}')
+        reg = re.compile(f'^{_pref}{pref_regex}') if not omit_mode else re.compile(f'^{_pref}{pref_regex}?')
         yield pref, reg
 
 
@@ -52,6 +54,7 @@ def getCityRegexes(pref: str, cities: list):
         yield city, re.compile(f'^{_city}')
 
 
+@cached(cache=TTLCache(maxsize=300, ttl=60 * 60 * 24 * 7))
 def getTowns(pref: str, city: str, endpoint: str):
     global cache_towns
 
@@ -92,12 +95,12 @@ def getTownRegexes(pref: str, city: str, endpoint):
         return _regex
 
     api_towns = getTowns(pref, city, endpoint)
-    towns = [d.get("town") for d in api_towns]
-    towns.sort(key=len, reverse=True)
+    # 少ない文字数の地名に対してミスマッチしないように文字の長さ順にソート
+    towns = sorted(api_towns, key=lambda x: len([i for i in x.get("town")]), reverse=True)
 
     town_regexes = []
     for town in towns:
-        _town = town
+        _town = town["town"]
         _town = re.sub('大?字', '(大?字)?', _town)
 
         for replace_town in re.finditer('([壱一二三四五六七八九十]+)(丁目?|番([町丁])|条|軒|線|([のノ])町|地割)', _town):
@@ -106,11 +109,10 @@ def getTownRegexes(pref: str, city: str, endpoint):
         _town = toRegex(_town)
 
         if re.match('^京都市', city) is not None:
-            # town_regexes.append([re.sub('^大字', '', town), re.compile(f'.*{_town}')])
-            town_regexes.append([town, re.compile(f'.*{_town}')])
+            # town_regexes.append([town["town"], re.compile(f'.*{_town}')])
+            town_regexes.append([town["town"], re.compile(f'.*{_town}'), town["lat"], town["lng"]])
         else:
-            # town_regexes.append([re.sub('^大字', '', town), re.compile(f'^{_town}')])
-            town_regexes.append([town, re.compile(f'^{_town}')])
+            town_regexes.append([town["town"], re.compile(f'^{_town}'), town["lat"], town["lng"]])
 
     return town_regexes
 
@@ -200,6 +202,8 @@ def toRegex(value: str):
     _value = re.sub('[渕淵]', '[渕淵]', _value)
     _value = re.sub('[エヱえ]', '[エヱえ]', _value)
     _value = re.sub('[曾曽]', '[曾曽]', _value)
+    _value = re.sub('[舟船]', '[舟船]', _value)
+    _value = re.sub('[莵菟]', '[莵菟]', _value)
 
     _value = jisKanji(_value)
 
@@ -209,14 +213,14 @@ def toRegex(value: str):
 def normalizeTownName(addr: str, pref: str, city: str, endpoint: str):
     addr = addr.strip()
     addr = re.sub('^大字', '', addr)
-    townRegexes = getTownRegexes(pref, city, endpoint)
+    town_regexes = getTownRegexes(pref, city, endpoint)
 
-    for townRegex in townRegexes:
-        _town, reg = townRegex[0], townRegex[1]
+    for town_regex in town_regexes:
+        _town, reg, lat, lng = town_regex[0], town_regex[1], town_regex[2], town_regex[3]
         match = re.match(reg, addr)
 
         if not match:
             continue
-        return {'town': _town, 'addr': addr[len(match.group()):]}
+        return {'town': _town, 'addr': addr[len(match.group()):], 'lat': lat, 'lng': lng}
 
     return None

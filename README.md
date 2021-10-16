@@ -20,7 +20,7 @@ pip install normalize-japanese-addresses
 ```python
 from normalize_japanese_addresses import normalize
 print(normalize("北海道札幌市西区24-2-2-3-3"))
-# {'pref': '北海道', 'city': '札幌市西区', 'town': '二十四軒二条二丁目', 'addr': '3-3', 'level': 3}
+# {'pref': '北海道', 'city': '札幌市西区', 'town': '二十四軒二条二丁目', 'addr': '3-3', 'lat': 43.074273, 'lng': 141.315099, 'level': 3}
 ```
 
 住所の正規化結果として戻されるオブジェクトには、`level` プロパティが含まれます。`level` には、住所文字列のどこまでを判別できたかを以下の数値で格納しています。
@@ -34,7 +34,7 @@ print(normalize("北海道札幌市西区24-2-2-3-3"))
 ```python
 from normalize_japanese_addresses import normalize
 print(normalize("北海道札幌市西区24-2-2-3-3", level=1))
-# {'pref': '北海道', 'city': '', 'town': '', 'addr': '札幌市西区24-2-2-3-3', 'level': 1}
+# {'pref': '北海道', 'city': '', 'town': '', 'addr': '札幌市西区24-2-2-3-3', 'lat': 43.074273, 'lng': 141.315099, 'level': 1}
 ```
 
 ## 注意

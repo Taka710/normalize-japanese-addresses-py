@@ -7,7 +7,7 @@ with open(path.join(path.abspath(path.dirname(__file__)), 'README.md'), encoding
 
 setup(
     name="normalize-japanese-addresses",
-    version="0.0.3",
+    version="0.0.4",
     author="Takahiro Hama",
     author_email="taka710.py@gmail.com",
     maintainer="Takahiro Hama",
@@ -28,7 +28,8 @@ setup(
     packages=setuptools.find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     install_requires=[
         "requests",
-        "kanjize"
+        "kanjize",
+        "cachetools"
     ],
     python_requires=">=3.8",
 )
