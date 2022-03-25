@@ -19,3 +19,12 @@ def test_normalize_add_0003():
            {"pref": "北海道", "city": "", "town": "", "addr": "札幌市西区24-2-2-3-3",
             "lat": None, "lng": None, "level": 1}
 
+
+# @geolonia/japanese-addresses にある住所データをローカルから読み込むテスト
+# テスト実行用に下記コマンドで /tmp/ 以下に住所データを保存する
+# curl -sL https://github.com/geolonia/japanese-addresses/archive/refs/heads/master.tar.gz | tar xvfz - -C /tmp/
+def test_normalize_add_0004():
+    assert normalize('北海道札幌市西区24-2-2-3-3', level=3, endpoint='file:///tmp/japanese-addresses-master/api/ja') ==            \
+           {"pref": "北海道", "city": "札幌市西区", "town": "二十四軒二条二丁目", "addr": "3-3",
+            "lat": 43.074273, "lng": 141.315099, "level": 3}
+
