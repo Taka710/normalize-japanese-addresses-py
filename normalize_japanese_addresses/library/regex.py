@@ -1,6 +1,7 @@
 import re
 import json
 import urllib.parse
+from functools import cmp_to_key
 
 import kanjize
 from cachetools import cached, TTLCache
@@ -94,9 +95,15 @@ def getTownRegexes(pref: str, city: str, endpoint):
 
         return _regex
 
+    def towns_length(api_town):
+        # 大字で始まる場合、優先度を低く設定する。
+        town_len = len(api_town['town'])
+        town_len = town_len - 2 if str(api_town['town']).startswith('大字') else town_len
+        return town_len
+
     api_towns = getTowns(pref, city, endpoint)
     # 少ない文字数の地名に対してミスマッチしないように文字の長さ順にソート
-    towns = sorted(api_towns, key=lambda x: len([i for i in x.get("town")]), reverse=True)
+    towns = sorted(api_towns, key=lambda x: towns_length(x), reverse=True)
 
     town_regexes = []
     for town in towns:
