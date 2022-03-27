@@ -894,3 +894,39 @@ def test_normalize_0149():
     assert normalize('千葉県巿川巿巿川1丁目') == \
            {"pref": "千葉県", "city": "市川市", "town": "市川一丁目", "addr": "",
             "lat": 35.731849, "lng": 139.909029, "level": 3}
+
+
+def test_normalize_0150():
+    assert normalize('京都市北区紫野東御所田町') == \
+           {"pref": "京都府", "city": "京都市北区", "town": "紫野東御所田町", "addr": "",
+            "lat": 35.039861, "lng": 135.753474, "level": 3}
+
+
+def test_normalize_0151():
+    assert normalize('鹿児島市山下町') == \
+           {"pref": "鹿児島県", "city": "鹿児島市", "town": "山下町", "addr": "",
+            "lat": 31.596716, "lng": 130.55643, "level": 3}
+
+
+def test_normalize_0152():
+    assert normalize('市川市八幡1丁目1番1号') == \
+           {"pref": "千葉県", "city": "市川市", "town": "八幡一丁目", "addr": "1-1",
+            "lat": 35.720285, "lng": 139.932528, "level": 3}
+
+
+def test_normalize_0153():
+    assert normalize('千葉市川市八幡1丁目1番1号') == \
+           {"pref": "千葉県", "city": "市川市", "town": "八幡一丁目", "addr": "1-1",
+            "lat": 35.720285, "lng": 139.932528, "level": 3}
+
+
+def test_normalize_0154():
+    assert normalize('石川郡石川町字長久保185-4') == \
+           {"pref": "福島県", "city": "石川郡石川町", "town": "字長久保", "addr": "185-4",
+            "lat": 37.155602, "lng": 140.446048, "level": 3}
+
+
+def test_normalize_0155():
+    assert normalize('福島石川郡石川町字長久保185-4') == \
+           {"pref": "福島県", "city": "石川郡石川町", "town": "字長久保", "addr": "185-4",
+            "lat": 37.155602, "lng": 140.446048, "level": 3}
