@@ -930,3 +930,36 @@ def test_normalize_0155():
     assert normalize('福島石川郡石川町字長久保185-4') == \
            {"pref": "福島県", "city": "石川郡石川町", "town": "字長久保", "addr": "185-4",
             "lat": 37.155602, "lng": 140.446048, "level": 3}
+
+
+def test_normalize_0156():
+    # 町丁目に長音符(ー)が入る場合で、丁目の数字がその後に続く場合
+    assert normalize('広島市西区商工センター六丁目9番39号') == \
+           {"pref": "広島県", "city": "広島市西区", "town": "商工センター六丁目", "addr": "9-39",
+            "lat": 34.36812, "lng": 132.388293, "level": 3}
+
+
+def test_normalize_0157():
+    # 町丁目に長音符(ー)が入る場合で、丁目の数字が 1 の場合
+    assert normalize('新潟県新潟市西区流通センター一丁目1-1') == \
+           {"pref": "新潟県", "city": "新潟市西区", "town": "流通センター一丁目", "addr": "1-1",
+            "lat": 37.866158, "lng": 138.998185, "level": 3}
+
+
+def test_normalize_0158():
+    # 町丁目に長音符(ー)が入る場合
+    assert normalize('青森県八戸市北インター工業団地4丁目1-1') == \
+           {"pref": "青森県", "city": "八戸市", "town": "北インター工業団地四丁目", "addr": "1-1",
+            "lat": 40.556931, "lng": 141.426763, "level": 3}
+
+
+def test_normalize_0159():
+    assert normalize('富山県高岡市オフィスパーク1-1') == \
+           {"pref": "富山県", "city": "高岡市", "town": "オフィスパーク", "addr": "1-1",
+            "lat": 36.670088, "lng": 136.998867, "level": 3}
+
+
+def test_normalize_0160():
+    assert normalize('福井県三方上中郡若狭町若狭テクノバレー1-1') == \
+           {"pref": "福井県", "city": "三方上中郡若狭町", "town": "若狭テクノバレー", "addr": "1-1",
+            "lat": 35.477349, "lng": 135.859423, "level": 3}

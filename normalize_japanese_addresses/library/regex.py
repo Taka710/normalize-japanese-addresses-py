@@ -101,6 +101,8 @@ def getTownRegexes(pref: str, city: str, endpoint):
     town_regexes = []
     for town in towns:
         _town = town["town"]
+        # 横棒を含む場合（流通センター、など）に対応
+        _town = re.sub('[-－﹣−‐⁃‑‒–—﹘―⎯⏤ーｰ─━]', '[-－﹣−‐⁃‑‒–—﹘―⎯⏤ーｰ─━]', _town)
         _town = re.sub('大?字', '(大?字)?', _town)
 
         for replace_town in re.finditer('([壱一二三四五六七八九十]+)(丁目?|番([町丁])|条|軒|線|([のノ])町|地割)', _town):
