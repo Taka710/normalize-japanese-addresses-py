@@ -204,6 +204,7 @@ def toRegex(value: str):
     _value = re.sub('[曾曽]', '[曾曽]', _value)
     _value = re.sub('[舟船]', '[舟船]', _value)
     _value = re.sub('[莵菟]', '[莵菟]', _value)
+    _value = re.sub('[市巿]', '[市巿]', _value)
 
     _value = jisKanji(_value)
 
