@@ -7,7 +7,7 @@ with open(path.join(path.abspath(path.dirname(__file__)), 'README.md'), encoding
 
 setup(
     name="normalize-japanese-addresses",
-    version="0.0.4",
+    version="0.0.5",
     author="Takahiro Hama",
     author_email="taka710.py@gmail.com",
     maintainer="Takahiro Hama",
