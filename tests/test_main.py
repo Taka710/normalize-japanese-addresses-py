@@ -981,3 +981,53 @@ def test_normalize_0163():
     assert normalize('埼玉県川口市大字芝字宮根3938-5') == \
            {"pref": "埼玉県", "city": "川口市", "town": "大字芝", "addr": "字宮根3938-5",
             "lat": 35.843399, "lng": 139.690803, "level": 3}
+
+
+def test_normalize_0164():
+    assert normalize('北海道上川郡東神楽町十四号北1番地') == \
+           {"pref": "北海道", "city": "上川郡東神楽町", "town": "十四号", "addr": "北1",
+            "lat": 43.693918, "lng": 142.463511, "level": 3}
+
+
+# 町丁目内の文字列の「町」の省略に関連するケース
+def test_normalize_0165():
+    assert normalize('東京都江戸川区西小松川12-345') == \
+           {"pref": "東京都", "city": "江戸川区", "town": "西小松川町", "addr": "12-345",
+            "lat": 35.698405, "lng": 139.862007, "level": 3}
+
+
+def test_normalize_0166():
+    assert normalize('滋賀県長浜市木之本西山123-4') == \
+           {"pref": "滋賀県", "city": "長浜市", "town": "木之本町西山", "addr": "123-4",
+            "lat": 35.496171, "lng": 136.204177, "level": 3}
+
+
+def test_normalize_0167():
+    assert normalize('福島県須賀川市西川町123-456') == \
+           {"pref": "福島県", "city": "須賀川市", "town": "西川町", "addr": "123-456",
+            "lat": 37.294611, "lng": 140.359974, "level": 3}
+
+
+def test_normalize_0168():
+    assert normalize('福島県須賀川市西川123-456') == \
+           {"pref": "福島県", "city": "須賀川市", "town": "西川", "addr": "123-456",
+            "lat": 37.296938, "lng": 140.343569, "level": 3}
+
+
+def test_normalize_0169():
+    assert normalize('広島県三原市幸崎久和喜12-345') == \
+           {"pref": "広島県", "city": "三原市", "town": "幸崎久和喜", "addr": "12-345",
+            "lat": 34.348481, "lng": 133.067756, "level": 3}
+
+
+def test_normalize_0170():
+    assert normalize('広島県三原市幸崎町久和喜24-56') == \
+           {"pref": "広島県", "city": "三原市", "town": "幸崎町久和喜", "addr": "24-56",
+            "lat": 34.352656, "lng": 133.055612, "level": 3}
+
+
+# 漢数字を含む町丁目については、後続の丁目や番地が壊れるので町の省略を許容しない
+def test_normalize_0171():
+    assert normalize('愛知県名古屋市瑞穂区十六町１丁目123-4') == \
+           {"pref": "愛知県", "city": "名古屋市瑞穂区", "town": "十六町一丁目", "addr": "123-4",
+            "lat": 35.128862, "lng": 136.936585, "level": 3}

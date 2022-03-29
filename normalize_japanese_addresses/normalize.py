@@ -135,7 +135,8 @@ def normalize(address: str, **kwargs):
     if city != '' and level >= 3:
         normalized = normalizeTownName(addr, pref, city, endpoint)
         if normalized is not None:
-            town = normalized['town']
+            _town = normalized['town']
+            town = _town['originalTown'] if 'originalTown' in _town else _town['town']
             addr = normalized['addr']
             lat = normalized['lat']
             lng = normalized['lng']

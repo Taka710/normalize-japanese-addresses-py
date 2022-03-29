@@ -1,13 +1,13 @@
 import re
 import json
 import urllib.parse
-from functools import cmp_to_key
+import copy
 
 import kanjize
 from cachetools import cached, TTLCache
 
 from .api import apiFetch
-from .utils import kan2num
+from .utils import kan2num, findKanjiNumbers
 
 JIS_OLD_KANJI = '亞,圍,壹,榮,驛,應,櫻,假,會,懷,覺,樂,陷,歡,氣,戲,據,挾,區,徑,溪,輕,藝,儉,圈,權,嚴,恆,國,齋,雜,蠶,殘,兒,實,釋,從,縱,敍,燒,條,剩,壤,釀,眞,盡,醉,髓,聲,竊,' \
                 '淺,錢,禪,爭,插,騷,屬,對,滯,擇,單,斷,癡,鑄,敕,鐵,傳,黨,鬪,屆,腦,廢,發,蠻,拂,邊,瓣,寶,沒,滿,藥,餘,樣,亂,兩,禮,靈,爐,灣,惡,醫,飮,營,圓,歐,奧,價,繪,擴,學,' \
@@ -101,9 +101,34 @@ def getTownRegexes(pref: str, city: str, endpoint):
         town_len = town_len - 2 if str(api_town['town']).startswith('大字') else town_len
         return town_len
 
+    def isKanjiNumberFollewedByCho(target_town_name):
+        x_cho = re.match('.町', target_town_name)
+        if not x_cho:
+            return False
+        else:
+            kanji_numbers = findKanjiNumbers(x_cho.group())
+            return len(kanji_numbers) > 0
+
     api_towns = getTowns(pref, city, endpoint)
+    api_towns_set = api_towns.copy()
+
+    towns_with_cho = [x for x in api_towns
+                      if str(x['town']).find('町') != -1 and
+                      str(x['town']).replace('町', '') not in api_towns_set and
+                      not isKanjiNumberFollewedByCho(str(x['town']))
+                      ]
+    # 町丁目に「町」が含まれるケースへの対応
+    # 通常は「○○町」のうち「町」の省略を許容し同義語として扱うが、まれに自治体内に「○○町」と「○○」が共存しているケースがある。
+    # この場合は町の省略は許容せず、入力された住所は書き分けられているものとして正規化を行う。
+    # 更に、「愛知県名古屋市瑞穂区十六町1丁目」漢数字を含むケースだと丁目や番地・号の正規化が不可能になる。このようなケースも除外。
+    for town in towns_with_cho:
+        dict_town = town.copy()
+        dict_town['originalTown'] = town['town']
+        dict_town['town'] = str(town['town']).replace('町', '')
+        api_towns_set.append(dict_town)
+
     # 少ない文字数の地名に対してミスマッチしないように文字の長さ順にソート
-    towns = sorted(api_towns, key=lambda x: towns_length(x), reverse=True)
+    towns = sorted(api_towns_set, key=lambda x: towns_length(x), reverse=True)
 
     town_regexes = []
     for town in towns:
@@ -117,11 +142,15 @@ def getTownRegexes(pref: str, city: str, endpoint):
 
         _town = toRegex(_town)
 
+        return_town = {}
+        if 'originalTown' in town:
+            return_town['originalTown'] = town['originalTown']
+        return_town['town'] = town['town']
+
         if re.match('^京都市', city) is not None:
-            # town_regexes.append([town["town"], re.compile(f'.*{_town}')])
-            town_regexes.append([town["town"], re.compile(f'.*{_town}'), town["lat"], town["lng"]])
+            town_regexes.append([return_town, re.compile(f'.*{_town}'), town["lat"], town["lng"]])
         else:
-            town_regexes.append([town["town"], re.compile(f'^{_town}'), town["lat"], town["lng"]])
+            town_regexes.append([return_town, re.compile(f'^{_town}'), town["lat"], town["lng"]])
 
     return town_regexes
 
@@ -228,6 +257,7 @@ def normalizeTownName(addr: str, pref: str, city: str, endpoint: str):
     for town_regex in town_regexes:
         _town, reg, lat, lng = town_regex[0], town_regex[1], town_regex[2], town_regex[3]
         match = re.match(reg, addr)
+        # print(_town, reg, lat, lng, match)
 
         if not match:
             continue
