@@ -112,7 +112,7 @@ def getTownRegexes(pref: str, city: str, endpoint):
     api_pre_towns = getTowns(pref, city, endpoint)
     api_towns_set = [x['town'] for x in api_pre_towns]
     api_towns = []
-    
+
     # 町丁目に「町」が含まれるケースへの対応
     # 通常は「○○町」のうち「町」の省略を許容し同義語として扱うが、まれに自治体内に「○○町」と「○○」が共存しているケースがある。
     # この場合は町の省略は許容せず、入力された住所は書き分けられているものとして正規化を行う。
@@ -124,9 +124,13 @@ def getTownRegexes(pref: str, city: str, endpoint):
         if str(originalTown).find('町') == -1:
             continue
         
-        townAddr = re.sub('(?!^町)町', '', originalTown)
+        townAddr = re.sub('(?!^町)町', '', originalTown) # NOTE: 冒頭の「町」は明らかに省略するべきではないので、除外
+        
+        if (
+            townAddr not in api_towns_set and
+            f'大字{townAddr}' not in api_towns_set and   # 大字は省略されるため、大字〇〇と〇〇町がコンフリクトする。このケースを除外
+            not isKanjiNumberFollewedByCho(originalTown)):
 
-        if townAddr not in api_towns_set and not isKanjiNumberFollewedByCho(originalTown):
             # エイリアスとして町なしのパターンを登録
             dict_town = town.copy()
             dict_town['originalTown'] = town['town']
