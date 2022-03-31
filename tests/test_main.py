@@ -830,12 +830,14 @@ def test_normalize_0138():
 
 
 def test_normalize_0139():
+    # 都道府県無し, 郡無し
     assert normalize('串本町串本千二百三十四') == \
            {"pref": "和歌山県", "city": "東牟婁郡串本町", "town": "串本", "addr": "1234",
             "lat": 33.470358, "lng": 135.779952, "level": 3}
 
 
 def test_normalize_0140():
+    # 都道府県無し, 郡無し
     assert normalize('せたな町北檜山区北檜山１９３') == \
            {"pref": "北海道", "city": "久遠郡せたな町", "town": "北檜山区北檜山", "addr": "193",
             "lat": 42.414, "lng": 139.881784, "level": 3}
@@ -872,18 +874,21 @@ def test_normalize_0145():
 
 
 def test_normalize_0146():
+    # 船と舟のゆらぎ
     assert normalize('京都府京都市中京区河原町二条下ル一之舟入町537-50') == \
            {"pref": "京都府", "city": "京都市中京区", "town": "一之船入町", "addr": "537-50",
             "lat": 35.01217, "lng": 135.769483, "level": 3}
 
 
 def test_normalize_0147():
+    # 莵と菟のゆらぎ
     assert normalize('京都府宇治市菟道森本8−10') == \
            {"pref": "京都府", "city": "宇治市", "town": "莵道", "addr": "森本8-10",
             "lat": 34.904244, "lng": 135.827041, "level": 3}
 
 
 def test_normalize_0148():
+    # 「都道府県」の文字列を省略した場合
     assert normalize('岩手花巻市１２丁目７０４') == \
            {"pref": "岩手県", "city": "花巻市", "town": "十二丁目", "addr": "704",
             "lat": 39.358268, "lng": 141.122331, "level": 3}
