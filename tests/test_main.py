@@ -1031,3 +1031,25 @@ def test_normalize_0171():
     assert normalize('愛知県名古屋市瑞穂区十六町１丁目123-4') == \
            {"pref": "愛知県", "city": "名古屋市瑞穂区", "town": "十六町一丁目", "addr": "123-4",
             "lat": 35.128862, "lng": 136.936585, "level": 3}
+
+# 町から始まる町丁目について、町を省略した場合は寄せない
+def test_normalize_0172():
+    # 東京都荒川区町屋５丁目 の町を省略した場合
+    res = normalize('東京都荒川区屋５丁目')
+    print(res)
+    assert res['town'] != '町屋５丁目'
+    assert res['level'] == 2
+
+
+def test_normalize_0173():
+    # 石川県輪島市町野町桶戸 の前側の町（町の名前の一部で、接尾の町に当たらない）を省略した場合
+    res = normalize('石川県輪島市野町桶戸')
+    assert res['town'] != '町野町桶戸'
+    assert res['level'] == 2
+
+
+def test_normalize_0174():
+    # 石川県輪島市町野町桶戸 の後側の町を省略した場合
+    assert normalize('石川県輪島市町野桶戸') == \
+           {"pref": "石川県", "city": "輪島市", "town": "町野町桶戸", "addr": "",
+            "lat": 37.414993, "lng": 137.092547, "level": 3}

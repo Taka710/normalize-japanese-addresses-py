@@ -109,26 +109,32 @@ def getTownRegexes(pref: str, city: str, endpoint):
             kanji_numbers = findKanjiNumbers(x_cho.group())
             return len(kanji_numbers) > 0
 
-    api_towns = getTowns(pref, city, endpoint)
-    api_towns_set = api_towns.copy()
-
-    towns_with_cho = [x for x in api_towns
-                      if str(x['town']).find('町') != -1 and
-                      str(x['town']).replace('町', '') not in api_towns_set and
-                      not isKanjiNumberFollewedByCho(str(x['town']))
-                      ]
+    api_pre_towns = getTowns(pref, city, endpoint)
+    api_towns_set = [x['town'] for x in api_pre_towns]
+    api_towns = []
+    
     # 町丁目に「町」が含まれるケースへの対応
     # 通常は「○○町」のうち「町」の省略を許容し同義語として扱うが、まれに自治体内に「○○町」と「○○」が共存しているケースがある。
     # この場合は町の省略は許容せず、入力された住所は書き分けられているものとして正規化を行う。
     # 更に、「愛知県名古屋市瑞穂区十六町1丁目」漢数字を含むケースだと丁目や番地・号の正規化が不可能になる。このようなケースも除外。
-    for town in towns_with_cho:
-        dict_town = town.copy()
-        dict_town['originalTown'] = town['town']
-        dict_town['town'] = str(town['town']).replace('町', '')
-        api_towns_set.append(dict_town)
+    for town in api_pre_towns:
+        api_towns.append(town)
+        
+        originalTown = town['town']
+        if str(originalTown).find('町') == -1:
+            continue
+        
+        townAddr = re.sub('(?!^町)町', '', originalTown)
+
+        if townAddr not in api_towns_set and not isKanjiNumberFollewedByCho(originalTown):
+            # エイリアスとして町なしのパターンを登録
+            dict_town = town.copy()
+            dict_town['originalTown'] = town['town']
+            dict_town['town'] = townAddr
+            api_towns.append(dict_town)
 
     # 少ない文字数の地名に対してミスマッチしないように文字の長さ順にソート
-    towns = sorted(api_towns_set, key=lambda x: towns_length(x), reverse=True)
+    towns = sorted(api_towns, key=lambda x: towns_length(x), reverse=True)
 
     town_regexes = []
     for town in towns:
