@@ -4,7 +4,7 @@ import pytest
 
 from normalize_japanese_addresses import normalize
 
-addresses = pd.read_csv("addresses.csv")
+addresses = pd.read_csv("./csv/addresses.csv")
 
 testData = []
 for _, address in addresses.iterrows():
