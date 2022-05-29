@@ -1,5 +1,6 @@
 import re
 import json
+import unicodedata
 
 from .library.regex import getPrefectures, getPrefectureRegexes, getCityRegexes, replace_addr, normalizeTownName
 from .library.patchAddr import patchAddr
@@ -35,7 +36,7 @@ def normalize(address: str, **kwargs):
     ref_level = 0
 
     # 初期住所設定
-    addr = address
+    addr = unicodedata.normalize('NFC', address)
 
     # スペース変換
     addr = addr.replace('　', SPACE).replace(' ', SPACE)

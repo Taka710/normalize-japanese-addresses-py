@@ -1,3 +1,5 @@
+import unicodedata
+
 from normalize_japanese_addresses import normalize
 
 
@@ -1084,3 +1086,9 @@ def test_normalize_0178():
     assert normalize('石川県輪島市町野桶戸') == \
            {"pref": "石川県", "city": "輪島市", "town": "町野町桶戸", "addr": "",
             "lat": 37.414993, "lng": 137.092547, "level": 3}
+
+def test_normalize_0179():
+    # 住所の正規化に先立って、文字をUnicode正規化する
+    address = unicodedata.normalize("NFKD", "茨城県つくば市筑穂１丁目１０−４")
+    res = normalize(address)
+    assert res["city"] == "つくば市"
