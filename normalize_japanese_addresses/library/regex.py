@@ -26,6 +26,10 @@ JIS_NEW_KANJI = '亜,囲,壱,栄,駅,応,桜,仮,会,懐,覚,楽,陥,歓,気,戯
 cache_prefecture = {}
 cache_towns = {}
 
+match_banchi_go_pattern = [
+        '[0-9０-９一二三四五六七八九〇十百千]+(番地?|-)[0-9０-９一二三四五六七八九〇十百千]+(号|-)[0-9０-９一二三四五六七八九〇十百千]+(号室?)', 
+        '[0-9０-９一二三四五六七八九〇十百千]+番[0-9０-９一二三四五六七八九〇十百千]+号'
+        ]
 
 @cached(cache=TTLCache(maxsize=300, ttl=60 * 60 * 24 * 7))
 def getPrefectures(endpoint):
@@ -267,7 +271,6 @@ def normalizeTownName(addr: str, pref: str, city: str, endpoint: str):
     for town_regex in town_regexes:
         _town, reg, lat, lng = town_regex[0], town_regex[1], town_regex[2], town_regex[3]
         match = re.match(reg, addr)
-        # print(_town, reg, lat, lng, match)
 
         if not match:
             continue

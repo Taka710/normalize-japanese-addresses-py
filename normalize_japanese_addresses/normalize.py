@@ -2,7 +2,7 @@ import re
 import json
 import unicodedata
 
-from .library.regex import getPrefectures, getPrefectureRegexes, getCityRegexes, replace_addr, normalizeTownName
+from .library.regex import getPrefectures, getPrefectureRegexes, getCityRegexes, replace_addr, normalizeTownName, match_banchi_go_pattern
 from .library.patchAddr import patchAddr
 from .library.utils import zen2han
 
@@ -134,6 +134,15 @@ def normalize(address: str, **kwargs):
 
     # 町丁目以降の正規化
     if city != '' and level >= 3:
+        
+        banchiGoQueue = []
+        for pattern in match_banchi_go_pattern:
+            match = re.match(pattern, addr)
+            if match is not None:
+                banchiGoQueue.append(match[0])
+                addr = addr.replace(match[0], '')
+            
+
         normalized = normalizeTownName(addr, pref, city, endpoint)
         if normalized is not None:
             _town = normalized['town']
@@ -142,6 +151,8 @@ def normalize(address: str, **kwargs):
             lat = normalized['lat']
             lng = normalized['lng']
 
+        addr = ''.join(banchiGoQueue) + addr
+        
         addr = replace_addr(addr)
 
     addr = patchAddr(pref, city, town, addr)

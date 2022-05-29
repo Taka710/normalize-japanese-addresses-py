@@ -1092,3 +1092,61 @@ def test_normalize_0179():
     address = unicodedata.normalize("NFKD", "茨城県つくば市筑穂１丁目１０−４")
     res = normalize(address)
     assert res["city"] == "つくば市"
+
+# 番地・号の分離：京都の住所では「一号｜1号..」などが「一番町」に正規化されてはいけない
+def test_normalize_180():
+    res = normalize('京都府京都市上京区主計町一番一号')
+    assert res['town'] != '一番町'
+    assert res['town'] == '主計町'
+    assert res['addr'] == '1-1'
+
+def test_normalize_181():
+    res = normalize('京都府京都市上京区主計町二番二号')
+    assert res['town'] != '二番町'
+    assert res['town'] == '主計町'
+    assert res['addr'] == '2-2'
+
+def test_normalize_182():
+    res = normalize('京都府京都市上京区主計町三番三号')
+    assert res['town'] != '三番町'
+    assert res['town'] == '主計町'
+    assert res['addr'] == '3-3'
+
+def test_normalize_183():
+    res = normalize('京都府京都市上京区中務町５４３番２１号')
+    assert res['town'] != '一番町'
+    assert res['town'] == '中務町'
+    assert res['addr'] == '543-21'
+
+def test_normalize_184():
+    res = normalize('京都府京都市上京区晴明町1番３号')
+    assert res['town'] != '三番町'
+    assert res['town'] == '晴明町'
+    assert res['addr'] == '1-3'
+
+def test_normalize_185():
+    res = normalize('京都府京都市上京区主計町1番地3')
+    assert res['town'] == '主計町'
+    assert res['addr'] == '1-3'
+
+def test_normalize_186():
+    res = normalize('京都府京都市上京区主計町123番')
+    assert res['town'] == '主計町'
+    assert res['addr'] == '123'
+
+def test_normalize_187():
+    res = normalize('京都府京都市上京区主計町123番地')
+    assert res['town'] == '主計町'
+    assert res['addr'] == '123'
+
+# 京都府京都市上京区主計町1番2-403号 建物名の省略と部屋番号の表記のケース
+def test_normalize_188():
+    res = normalize('京都府京都市上京区主計町1番2-403号')
+    assert res['town'] == '主計町'
+    assert res['addr'] == '1-2-403号'
+
+def test_normalize_189():
+    res = normalize('京都府京都市上京区主計町1番1号おはようビル301号室')
+    assert res['town'] != '一番町'
+    assert res['town'] == '主計町'
+    assert res['addr'] == '1-1 おはようビル301号室'
