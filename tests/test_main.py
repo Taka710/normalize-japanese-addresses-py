@@ -1150,3 +1150,9 @@ def test_normalize_189():
     assert res['town'] != '一番町'
     assert res['town'] == '主計町'
     assert res['addr'] == '1-1 おはようビル301号室'
+
+# latとlngのデータがないときはNoneを返す
+def test_normalize_190():
+    res = normalize('大分県大分市田中町3丁目1-12')
+    assert res['lat'] is None
+    assert res['lng'] is None
