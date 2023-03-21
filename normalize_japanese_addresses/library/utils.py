@@ -1,6 +1,6 @@
 import re
 
-from kanjize import kanji2int, int2kanji
+from kanjize import kanji2number, int2kanji
 
 from .japaneseNumerics import japaneseNumerics, oldJapaneseNumerics
 
@@ -21,13 +21,13 @@ def splitLargeNumber(japanese: str):
     for key, value in largeNumbers.items():
         match = re.match(f'(.+){key}', kanji)
         if match is not None:
-            numbers[key] = kanji2int(match.group())
+            numbers[key] = kanji2number(match.group())
             kanji = kanji.replace(match.group(), '')
         else:
             numbers[key] = 0
 
     if len(kanji) > 0:
-        numbers['千'] = kanji2int(kanji)
+        numbers['千'] = kanji2number(kanji)
     else:
         numbers['千'] = 0
 
@@ -36,12 +36,12 @@ def splitLargeNumber(japanese: str):
 
 def kan2num(value: str):
     for fromValue in findKanjiNumbers(value):
-        value = value.replace(fromValue, str(kanji2number(fromValue)))
+        value = value.replace(fromValue, str(_kanji2integer(fromValue)))
 
     return value
 
 
-def kanji2number(japanese: str):
+def _kanji2integer(japanese: str):
     japanese = normalize(japanese)
 
     if re.match('〇', japanese) is not None or re.match('^[〇一二三四五六七八九]+$', japanese) is not None:
@@ -59,7 +59,7 @@ def kanji2number(japanese: str):
                 number = number + n
 
         if not str(number).isdigit() or not str(numbers['千']).isdigit():
-            raise TypeError('The attribute of kanji2number() must be a Japanese numeral as integer.')
+            raise TypeError('The attribute of _kanji2integer() must be a Japanese numeral as integer.')
 
         return number + numbers['千']
 

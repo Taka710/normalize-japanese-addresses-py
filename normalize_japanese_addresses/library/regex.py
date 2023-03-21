@@ -87,7 +87,7 @@ def getTownRegexes(pref: str, city: str, endpoint):
         else:
             num = match_value
             for match in re.finditer('([一二三四五六七八九十]+)', match_value):
-                replace_num = str(kanjize.kanji2int(match.group()))
+                replace_num = str(kan2num(match.group()))
                 num = num.replace(match.group(), replace_num)
 
             num = re.sub('(丁目?|番([町丁])|条|軒|線|([のノ])町|地割)', '', num)
@@ -127,9 +127,11 @@ def getTownRegexes(pref: str, city: str, endpoint):
         originalTown = town['town']
         if str(originalTown).find('町') == -1:
             continue
-        
-        townAddr = re.sub('(?!^町)町', '', originalTown) # NOTE: 冒頭の「町」は明らかに省略するべきではないので、除外
-        
+
+        # 「愛知県名古屋市瑞穂区十六町1丁目」など漢数字を含むケースは、曖昧処理から除外
+        if re.match('[壱一二三四五六七八九十百千万]+町', originalTown) is None:
+            townAddr = re.sub('(?!^町)町', '', originalTown) # NOTE: 冒頭の「町」は明らかに省略するべきではないので、除外
+
         if (
             townAddr not in api_towns_set and
             f'大字{townAddr}' not in api_towns_set and   # 大字は省略されるため、大字〇〇と〇〇町がコンフリクトする。このケースを除外
