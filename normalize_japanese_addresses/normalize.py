@@ -13,7 +13,7 @@ from .library.regex import (
     normalizeTownName,
     match_banchi_go_pattern,
 )
-from .library.patchAddr import patchAddr
+from .library.patchAddr import patch_addr
 from .library.utils import zen2han
 
 SPACE: str = " "
@@ -68,7 +68,7 @@ def normalize(address: str, **kwargs) -> str:
         )
 
     # 住所の後処理
-    addr = patchAddr(pref, city, town, addr)
+    addr = patch_addr(pref, city, town, addr)
 
     # 戻り値のレベルを設定
     ref_level = set_level(pref, city, town, ref_level)

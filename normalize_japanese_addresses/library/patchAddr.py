@@ -25,15 +25,8 @@ addrPatches = [
 ]
 
 
-def patchAddr(
-        pref: str,
-        city: str,
-        town: str,
-        addr: str
-):
-    _addr = addr
+def patch_addr(pref: str, city: str, town: str, addr: str) -> str:
     for patch in addrPatches:
         if patch['pref'] == pref and patch['city'] == city and patch['town'] == town:
-            _addr = re.sub(patch['pattern'], patch['result'], _addr)
-
-    return _addr
+            return re.sub(patch['pattern'], patch['result'], addr)
+    return addr
