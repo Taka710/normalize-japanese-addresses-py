@@ -3,7 +3,7 @@ import urllib.parse
 import requests
 
 
-def apiFetch(endpoint: str = ''):
+def api_fetch(endpoint: str = ''):
     if endpoint.startswith('http'):
         return requests.get(endpoint)
     elif endpoint.startswith('file'):

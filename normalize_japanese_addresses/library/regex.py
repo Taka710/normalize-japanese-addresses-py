@@ -6,7 +6,7 @@ import copy
 import kanjize
 from cachetools import cached, TTLCache
 
-from .api import apiFetch
+from .api import api_fetch
 from .utils import kan2num, findKanjiNumbers
 
 JIS_OLD_KANJI = '亞,圍,壹,榮,驛,應,櫻,假,會,懷,覺,樂,陷,歡,氣,戲,據,挾,區,徑,溪,輕,藝,儉,圈,權,嚴,恆,國,齋,雜,蠶,殘,兒,實,釋,從,縱,敍,燒,條,剩,壤,釀,眞,盡,醉,髓,聲,竊,' \
@@ -36,7 +36,7 @@ def getPrefectures(endpoint):
     global cache_prefecture
     endpoint_url = f'{endpoint}.json'
     if endpoint_url not in cache_prefecture:
-        cache_prefecture[endpoint_url] = apiFetch(f'{endpoint}.json')
+        cache_prefecture[endpoint_url] = api_fetch(f'{endpoint}.json')
 
     return cache_prefecture[endpoint_url]
 
@@ -71,7 +71,7 @@ def getTowns(pref: str, city: str, endpoint: str):
 
     endpoint_url = f'{town_endpoint}.json'
     if endpoint_url not in cache_towns:
-        cache_towns[endpoint_url] = list(json.loads((apiFetch(endpoint_url)).text))
+        cache_towns[endpoint_url] = list(json.loads((api_fetch(endpoint_url)).text))
 
     return cache_towns[endpoint_url]
 
