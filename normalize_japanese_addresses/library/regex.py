@@ -76,7 +76,7 @@ def getTowns(pref: str, city: str, endpoint: str):
     return cache_towns[endpoint_url]
 
 
-def getTownRegexes(pref: str, city: str, endpoint):
+def get_town_regexes(pref: str, city: str, endpoint):
     def getChomeRegex(match_value: str):
         regexes = [re.sub('(丁目?|番([町丁])|条|軒|線|([のノ])町|地割)', '', match_value)]
 
@@ -179,103 +179,95 @@ def replace_addr(addr: str):
 
     addr = re.sub('^-', '', addr)
 
-    for _find_addr in re.finditer('([0-9]+)(丁目)', addr):
-        _rp = replace_1(_find_addr.group())
-        addr = addr.replace(_find_addr.group(), _rp)
+    patterns = [
+        (re.compile('([0-9]+)(丁目)'), lambda m: replace_1(m.group())),
+        (re.compile('(([0-9〇一二三四五六七八九十百千]+)(番地?)([0-9〇一二三四五六七八九十百千]+)号)\\s*(.+)'), lambda m: '{} {}'.format(m.group(1), m.group(5))),
+        (re.compile('([0-9〇一二三四五六七八九十百千]+)(番地?)([(0-9〇一二三四五六七八九十百千]+)号?'), lambda m: '{}-{}'.format(m.group(1), m.group(3))),
+        (re.compile('([0-9〇一二三四五六七八九十百千]+)番地?'), r'\1'),
+        (re.compile('([0-9〇一二三四五六七八九十百千]+)の'), r'\1-'),
+        (re.compile('([0-9〇一二三四五六七八九十百千]+)[-－﹣−‐⁃‑‒–—﹘―⎯⏤ーｰ─━]'), lambda m: re.sub('[-－﹣−‐⁃‑‒–—﹘―⎯⏤ーｰ─━]', '-', kan2num(m.group()))),
+        (re.compile('[-－﹣−‐⁃‑‒–—﹘―⎯⏤ーｰ─━]([0-9〇一二三四五六七八九十百千]+)'), lambda m: re.sub('[-－﹣−‐⁃‑‒–—﹘―⎯⏤ーｰ─━]', '-', kan2num(m.group()))),
+        (re.compile('([0-9〇一二三四五六七八九十百千]+)-'), lambda m: kan2num(m.group())),
+        (re.compile('-([0-9〇一二三四五六七八九十百千]+)'), lambda m: kan2num(m.group())),
+        (re.compile('-[^0-9]+([0-9〇一二三四五六七八九十百千]+)'), lambda m: kan2num(m.group())),
+        (re.compile('([0-9〇一二三四五六七八九十百千]+)$'), lambda m: kan2num(m.group())),
+    ]
 
-    addr = re.sub('(([0-9〇一二三四五六七八九十百千]+)(番地?)([0-9〇一二三四五六七八九十百千]+)号)\\s*(.+)', '\\1 \\5', addr)
+    for pattern, repl in patterns:
+        addr = pattern.sub(repl, addr)
 
-    addr = re.sub('([0-9〇一二三四五六七八九十百千]+)(番地?)([(0-9〇一二三四五六七八九十百千]+)号?', '\\1-\\3', addr)
-
-    addr = re.sub('([0-9〇一二三四五六七八九十百千]+)番地?', '\\1', addr)
-
-    addr = re.sub('([0-9〇一二三四五六七八九十百千]+)の', '\\1-', addr)
-
-    for _find_addr in re.finditer('([0-9〇一二三四五六七八九十百千]+)[-－﹣−‐⁃‑‒–—﹘―⎯⏤ーｰ─━]', addr):
-        _rp = re.sub('[-－﹣−‐⁃‑‒–—﹘―⎯⏤ーｰ─━]', '-', kan2num(_find_addr.group()))
-        addr = addr.replace(_find_addr.group(), _rp)
-
-    for _find_addr in re.finditer('[-－﹣−‐⁃‑‒–—﹘―⎯⏤ーｰ─━]([0-9〇一二三四五六七八九十百千]+)', addr):
-        _rp = re.sub('[-－﹣−‐⁃‑‒–—﹘―⎯⏤ーｰ─━]', '-', kan2num(_find_addr.group()))
-        addr = addr.replace(_find_addr.group(), _rp)
-
-    for _find_addr in re.finditer('([0-9〇一二三四五六七八九十百千]+)-', addr):
-        addr = addr.replace(_find_addr.group(), kan2num(_find_addr.group()))
-
-    for _find_addr in re.finditer('-([0-9〇一二三四五六七八九十百千]+)', addr):
-        addr = addr.replace(_find_addr.group(), kan2num(_find_addr.group()))
-
-    for _find_addr in re.finditer('-[^0-9]+([0-9〇一二三四五六七八九十百千]+)', addr):
-        addr = addr.replace(_find_addr.group(), kan2num(_find_addr.group()))
-
-    for _find_addr in re.finditer('([0-9〇一二三四五六七八九十百千]+)$', addr):
-        addr = addr.replace(_find_addr.group(), kan2num(_find_addr.group()))
-
-    addr = addr.strip()
-
-    return addr
-
+    return addr.strip()
 
 def jis_kanji_regexes():
-    dict_jis_kanji = dict(zip(JIS_OLD_KANJI, JIS_NEW_KANJI))
-    for old_kanji, new_kanji in dict_jis_kanji.items():
-        yield re.compile(f'{old_kanji}|{new_kanji}'), old_kanji, new_kanji
+    for old_kanji, new_kanji in zip(JIS_OLD_KANJI, JIS_NEW_KANJI):
+        regex = re.compile(f'{old_kanji}|{new_kanji}')
+        yield regex, old_kanji, new_kanji
 
 
 def jisKanji(value: str):
     _value = value
     for reg, old_kanji, new_kanji in jis_kanji_regexes():
-        _value = re.sub(reg, f'({old_kanji}|{new_kanji})', _value)
+        pattern = re.compile(reg)
+        _value = pattern.sub(f'({old_kanji}|{new_kanji})', _value)
     return _value
 
 
 def toRegex(value: str):
-    _value = value
+
     # 以下なるべく文字数が多いものほど上にすること
+    patterns = [
+    ('三栄町|四谷三栄町', '(三栄町|四谷三栄町)'),
+    ('鬮野川|くじ野川|くじの川', '(鬮野川|くじ野川|くじの川)'),
+    ('通り|とおり', '(通り|とおり)'),
+    ('埠頭|ふ頭', '(埠頭|ふ頭)'),
+    ('番町|番丁', '(番町|番丁)'),
+    ('大冝|大宜', '(大冝|大宜)'),
+    ('穝|さい', '(穝|さい)'),
+    ('杁|えぶり', '(杁|えぶり)'),
+    ('薭|稗|ひえ|ヒエ', '(薭|稗|ひえ|ヒエ)'),
+    ('[之ノの]', '[之ノの]'),
+    ('[ヶケが]', '[ヶケが]'),
+    ('[ヵカか力]', '[ヵカか力]'),
+    ('[ッツっつ]', '[ッツっつ]'),
+    ('[ニ二]', '[ニ二]'),
+    ('[ハ八]', '[ハ八]'),
+    ('[塚塚]', '[塚塚]'),
+    ('[釜竈]', '[釜竈]'),
+    ('[條条]', '[條条]'),
+    ('[狛拍]', '[狛拍]'),
+    ('[藪薮]', '[藪薮]'),
+    ('[渕淵]', '[渕淵]'),
+    ('[エヱえ]', '[エヱえ]'),
+    ('[曾曽]', '[曾曽]'),
+    ('[舟船]', '[舟船]'),
+    ('[莵菟]', '[莵菟]'),
+    ('[市巿]', '[市巿]')
+    ]
 
-    _value = re.sub('三栄町|四谷三栄町', '(三栄町|四谷三栄町)', _value)
-    _value = re.sub('鬮野川|くじ野川|くじの川', '(鬮野川|くじ野川|くじの川)', _value)
-    _value = re.sub('通り|とおり', '(通り|とおり)', _value)
-    _value = re.sub('埠頭|ふ頭', '(埠頭|ふ頭)', _value)
-    _value = re.sub('番町|番丁', '(番町|番丁)', _value)
-    _value = re.sub('大冝|大宜', '(大冝|大宜)', _value)
-    _value = re.sub('穝|さい', '(穝|さい)', _value)
-    _value = re.sub('杁|えぶり', '(杁|えぶり)', _value)
-    _value = re.sub('薭|稗|ひえ|ヒエ', '(薭|稗|ひえ|ヒエ)', _value)
-    _value = re.sub('[之ノの]', '[之ノの]', _value)
-    _value = re.sub('[ヶケが]', '[ヶケが]', _value)
-    _value = re.sub('[ヵカか力]', '[ヵカか力]', _value)
-    _value = re.sub('[ッツっつ]', '[ッツっつ]', _value)
-    _value = re.sub('[ニ二]', '[ニ二]', _value)
-    _value = re.sub('[ハ八]', '[ハ八]', _value)
-    _value = re.sub('[塚塚]', '[塚塚]', _value)
-    _value = re.sub('[釜竈]', '[釜竈]', _value)
-    _value = re.sub('[條条]', '[條条]', _value)
-    _value = re.sub('[狛拍]', '[狛拍]', _value)
-    _value = re.sub('[藪薮]', '[藪薮]', _value)
-    _value = re.sub('[渕淵]', '[渕淵]', _value)
-    _value = re.sub('[エヱえ]', '[エヱえ]', _value)
-    _value = re.sub('[曾曽]', '[曾曽]', _value)
-    _value = re.sub('[舟船]', '[舟船]', _value)
-    _value = re.sub('[莵菟]', '[莵菟]', _value)
-    _value = re.sub('[市巿]', '[市巿]', _value)
+    # コンパイル済み正規表現オブジェクトのリストを順番に適用
+    for pattern in [(re.compile(p[0]), p[1]) for p in patterns]:
+        value = pattern[0].sub('({})'.format(pattern[0].pattern), value)
 
-    _value = jisKanji(_value)
 
-    return _value
+    value = jisKanji(value)
+
+    return value
 
 
 def normalizeTownName(addr: str, pref: str, city: str, endpoint: str):
+    # アドレスの前後の空白を削除する
     addr = addr.strip()
+
+    # アドレスの先頭が"大字"で始まっていた場合は削除
     addr = re.sub('^大字', '', addr)
-    town_regexes = getTownRegexes(pref, city, endpoint)
 
-    for town_regex in town_regexes:
-        _town, reg, lat, lng = town_regex[0], town_regex[1], town_regex[2], town_regex[3]
-        match = re.match(reg, addr)
+    # 町名の正規化
+    for town, regex, lat, lng in get_town_regexes(pref, city, endpoint):
+        match = re.match(regex, addr)
+        if match:
+            # 正規表現にマッチした場合、辞書型で町の名前、住所、緯度、経度を返す
+            return {'town': town, 'addr': addr[len(match.group()):], 'lat': lat, 'lng': lng}
 
-        if not match:
-            continue
-        return {'town': _town, 'addr': addr[len(match.group()):], 'lat': lat, 'lng': lng}
-
+    # 正規表現にマッチしなかった場合は None を返す
     return None
+
