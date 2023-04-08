@@ -1,31 +1,28 @@
 import re
 import json
 import unicodedata
-import logging
 
 from typing import Tuple, Optional
 
 from .library.regex import (
-    getPrefectures,
-    getPrefectureRegexes,
-    getCityRegexes,
+    get_prefectures,
+    get_prefecture_regexes,
+    get_city_regexes,
     replace_addr,
-    normalizeTownName,
-    match_banchi_go_pattern,
+    normalize_town_name,
+    MATCH_BANCHI_GO_PATTERN,
 )
 from .library.patchAddr import patch_addr
-from .library.utils import zen2han
+from .library.utils import zenkaku_to_hankaku
 
 SPACE: str = " "
 HYPHEN: str = "-"
 
 # japanese-addressesのendpoint
-default_endpoint = "https://geolonia.github.io/japanese-addresses/api/ja"
+DEFAULT_ENDPOINT = "https://geolonia.github.io/japanese-addresses/api/ja"
 
 # オプションのレベル設定
-default_level = 3
-
-logger = logging.getLogger(__name__)
+DEFAULT_LEVEL = 3
 
 
 def normalize(address: str, **kwargs) -> str:
@@ -46,7 +43,7 @@ def normalize(address: str, **kwargs) -> str:
     addr = preprocessing_address(addr)
 
     # 都道府県情報を取得
-    prefectures = json.loads(getPrefectures(endpoint).text)
+    prefectures = json.loads(get_prefectures(endpoint).text)
     prefectures_list: list = list(prefectures.keys())
 
     # 都道府県の正規化
@@ -88,8 +85,8 @@ def set_options(options: dict) -> tuple:
     """
     オプションの設定
     """
-    level = options.get("level", default_level)
-    endpoint = options.get("endpoint", default_endpoint)
+    level = options.get("level", DEFAULT_LEVEL)
+    endpoint = options.get("endpoint", DEFAULT_ENDPOINT)
     return level, endpoint
 
 
@@ -170,7 +167,7 @@ def preprocessing_address(addr: str) -> str:
     addr = replace_spaces(addr)
 
     # 全角の英数字は半角に変換
-    addr = zen2han(addr)
+    addr = zenkaku_to_hankaku(addr)
 
     # 数字の後に紐づくハイフン類似文字をすべて半角ハイフンに変換
     addr = replace_hyphen_like_characters_after_digits(addr)
@@ -191,7 +188,7 @@ def normalize_prefecture_names(
     都道府県名を正規化する
     """
     pref = ""
-    for _pref, reg in getPrefectureRegexes(prefectures_list):
+    for _pref, reg in get_prefecture_regexes(prefectures_list):
         if reg.match(addr):
             pref = _pref
             addr = addr[len(reg.match(addr)[0]) :]
@@ -203,7 +200,7 @@ def normalize_prefecture_names(
 
         for _pref, cities in prefectures.items():
             addr = addr.strip()
-            for _city, reg in getCityRegexes(_pref, cities):
+            for _city, reg in get_city_regexes(_pref, cities):
                 match = reg.match(addr)
                 if match is not None:
                     matched.append(
@@ -219,7 +216,7 @@ def normalize_prefecture_names(
             pref = matched[0]["pref"]
         else:
             for match in matched:
-                normalized = normalizeTownName(
+                normalized = normalize_town_name(
                     match["addr"], match["pref"], match["city"], endpoint
                 )
 
@@ -229,7 +226,7 @@ def normalize_prefecture_names(
 
     # 都道府県が省略されている場合に都道府県を抽出（誤検知防止のため、省略
     if pref == "":
-        for _pref, reg in getPrefectureRegexes(prefectures_list, True):
+        for _pref, reg in get_prefecture_regexes(prefectures_list, True):
             if reg.match(addr):
                 pref = _pref
                 addr = addr[len(reg.match(addr)[0]) :]
@@ -245,7 +242,7 @@ def normalize_city_names(addr: str, prefectures: dict, pref: str) -> Tuple[str, 
     city = ""
     cities = prefectures[pref]
 
-    for _city, reg in getCityRegexes(pref, cities):
+    for _city, reg in get_city_regexes(pref, cities):
         match = reg.match(addr)
         if match is not None:
             city = _city
@@ -267,13 +264,13 @@ def normalize_after_town_names(
     lng = None
 
     banchiGoQueue = []
-    for pattern in match_banchi_go_pattern:
+    for pattern in MATCH_BANCHI_GO_PATTERN:
         match = re.match(pattern, addr)
         if match is not None:
             banchiGoQueue.append(match[0])
             addr = addr.replace(match[0], "")
 
-    normalized = normalizeTownName(addr, pref, city, endpoint)
+    normalized = normalize_town_name(addr, pref, city, endpoint)
     if normalized is not None:
         _town = normalized["town"]
         town = _town["originalTown"] if "originalTown" in _town else _town["town"]

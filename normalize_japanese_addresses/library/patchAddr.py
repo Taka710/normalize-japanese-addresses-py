@@ -1,6 +1,6 @@
 import re
 
-addrPatches = [
+ADDR_PATCHES = [
     {
         'pref': '香川県',
         'city': '仲多度郡まんのう町',
@@ -26,7 +26,7 @@ addrPatches = [
 
 
 def patch_addr(pref: str, city: str, town: str, addr: str) -> str:
-    for patch in addrPatches:
+    for patch in ADDR_PATCHES:
         if patch['pref'] == pref and patch['city'] == city and patch['town'] == town:
             return re.sub(patch['pattern'], patch['result'], addr)
     return addr

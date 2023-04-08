@@ -2,23 +2,23 @@ import re
 
 from kanjize import kanji2number, int2kanji
 
-from .japaneseNumerics import japaneseNumerics, oldJapaneseNumerics
+from .japaneseNumerics import JAPANESE_NUMERICS, OLD_JAPANESE_NUMERICS
 
-largeNumbers = {'兆': 1000000000000, '億': 100000000, '万': 10000}
-smallNumbers = {'千': 1000, '百': 100, '十': 10}
+LARGE_MUMBERS = {'兆': 1000000000000, '億': 100000000, '万': 10000}
+SMALL_NUMBERS = {'千': 1000, '百': 100, '十': 10}
 
 
-def normalize(japanese: str):
-    for key, value in oldJapaneseNumerics.items():
+def normalize(japanese: str) -> str:
+    for key, value in OLD_JAPANESE_NUMERICS.items():
         japanese = re.sub(key, value, japanese)
 
     return japanese
 
 
-def splitLargeNumber(japanese: str):
+def split_large_number(japanese: str) -> dict:
     kanji = japanese
     numbers = {}
-    for key, value in largeNumbers.items():
+    for key, value in LARGE_MUMBERS.items():
         match = re.match(f'(.+){key}', kanji)
         if match is not None:
             numbers[key] = kanji2number(match.group())
@@ -34,38 +34,38 @@ def splitLargeNumber(japanese: str):
     return numbers
 
 
-def kan2num(value: str):
-    for fromValue in findKanjiNumbers(value):
-        value = value.replace(fromValue, str(_kanji2integer(fromValue)))
+def kan2num(value: str) -> str:
+    def _kanji_to_integer(kanji_number: str) -> int:
+        kanji_number = normalize(kanji_number)
+
+        if re.match('〇', kanji_number) is not None or re.match('^[〇一二三四五六七八九]+$', kanji_number) is not None:
+            for key, value in JAPANESE_NUMERICS.items():
+                kanji_number = kanji_number.replace(key, value)
+
+            return int(kanji_number)
+        else:
+            number = 0
+            numbers = split_large_number(kanji_number)
+
+            for key, value in LARGE_MUMBERS.items():
+                if key in numbers:
+                    n = value * numbers[key]
+                    number = number + n
+
+            if not str(number).isdigit() or not str(numbers['千']).isdigit():
+                raise TypeError('The attribute of _kanji_to_integer() must be a Japanese numeral as integer.')
+
+            return number + numbers['千']
+
+
+    for fromValue in find_kanji_numbers(value):
+        value = value.replace(fromValue, str(_kanji_to_integer(fromValue)))
 
     return value
 
 
-def _kanji2integer(japanese: str):
-    japanese = normalize(japanese)
-
-    if re.match('〇', japanese) is not None or re.match('^[〇一二三四五六七八九]+$', japanese) is not None:
-        for key, value in japaneseNumerics.items():
-            japanese = japanese.replace(key, value)
-
-        return int(japanese)
-    else:
-        number = 0
-        numbers = splitLargeNumber(japanese)
-
-        for key, value in largeNumbers.items():
-            if key in numbers:
-                n = value * numbers[key]
-                number = number + n
-
-        if not str(number).isdigit() or not str(numbers['千']).isdigit():
-            raise TypeError('The attribute of _kanji2integer() must be a Japanese numeral as integer.')
-
-        return number + numbers['千']
-
-
-def findKanjiNumbers(text: str):
-    def isItemLength(item: str):
+def find_kanji_numbers(text: str) -> list:
+    def isItemLength(item: str) -> bool:
         if item is None:
             return False
 
@@ -94,7 +94,7 @@ def findKanjiNumbers(text: str):
     return return_kanji
 
 
-def zen2han(value: str):
+def zenkaku_to_hankaku(value: str) -> str:
     return value \
         .translate(str.maketrans({chr(0xFF10 + i): chr(0x30 + i) for i in range(10)})) \
         .translate(str.maketrans({chr(0xFF21 + i): chr(0x41 + i) for i in range(26)})) \

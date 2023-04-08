@@ -1,4 +1,4 @@
-japaneseNumerics = {
+JAPANESE_NUMERICS = {
     "〇": "0",
     "一": "1",
     "二": "2",
@@ -21,7 +21,7 @@ japaneseNumerics = {
     "９": "9",
 }
 
-oldJapaneseNumerics = {
+OLD_JAPANESE_NUMERICS = {
     "零": "〇",
     "壱": "一",
     "壹": "一",

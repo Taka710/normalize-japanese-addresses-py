@@ -2,12 +2,13 @@ import re
 import json
 import urllib.parse
 import copy
+from typing import List, Dict, Any, Optional, Union, Generator, Tuple, Callable, Pattern
 
 import kanjize
 from cachetools import cached, TTLCache
 
 from .api import api_fetch
-from .utils import kan2num, findKanjiNumbers
+from .utils import kan2num, find_kanji_numbers
 
 JIS_OLD_KANJI = '亞,圍,壹,榮,驛,應,櫻,假,會,懷,覺,樂,陷,歡,氣,戲,據,挾,區,徑,溪,輕,藝,儉,圈,權,嚴,恆,國,齋,雜,蠶,殘,兒,實,釋,從,縱,敍,燒,條,剩,壤,釀,眞,盡,醉,髓,聲,竊,' \
                 '淺,錢,禪,爭,插,騷,屬,對,滯,擇,單,斷,癡,鑄,敕,鐵,傳,黨,鬪,屆,腦,廢,發,蠻,拂,邊,瓣,寶,沒,滿,藥,餘,樣,亂,兩,禮,靈,爐,灣,惡,醫,飮,營,圓,歐,奧,價,繪,擴,學,' \
@@ -23,16 +24,16 @@ JIS_NEW_KANJI = '亜,囲,壱,栄,駅,応,桜,仮,会,懐,覚,楽,陥,歓,気,戯
                 '険,献,験,効,号,済,冊,桟,賛,歯,湿,写,収,獣,処,称,奨,浄,縄,譲,嘱,慎,粋,随,数,静,専,践,繊,壮,捜,総,臓,堕,帯,滝,担,団,遅,昼,聴,逓,転,当,稲,読,悩,拝,麦,抜,' \
                 '浜,並,弁,舗,褒,万,訳,予,揺,来,竜,塁,隷,恋,楼,鯵,鴬,蛎,撹,竃,潅,諌,頚,砿,蕊,靭,賎,壷,砺,梼,涛,迩,蝿,桧,侭,薮,篭 '.split(',')
 
-cache_prefecture = {}
-cache_towns = {}
-
-match_banchi_go_pattern = [
+MATCH_BANCHI_GO_PATTERN = [
         '[0-9０-９一二三四五六七八九〇十百千]+(番地?|-)[0-9０-９一二三四五六七八九〇十百千]+(号|-)[0-9０-９一二三四五六七八九〇十百千]+(号室?)', 
         '[0-9０-９一二三四五六七八九〇十百千]+番[0-9０-９一二三四五六七八九〇十百千]+号'
         ]
 
+cache_prefecture = {}
+cache_towns = {}
+
 @cached(cache=TTLCache(maxsize=300, ttl=60 * 60 * 24 * 7))
-def getPrefectures(endpoint):
+def get_prefectures(endpoint: str) -> dict:
     global cache_prefecture
     endpoint_url = f'{endpoint}.json'
     if endpoint_url not in cache_prefecture:
@@ -41,26 +42,26 @@ def getPrefectures(endpoint):
     return cache_prefecture[endpoint_url]
 
 
-def getPrefectureRegexes(prefs: list, omit_mode: bool = False):
-    pref_regex = '([都道府県])'
-    for pref in prefs:
-        _pref = re.sub(f'{pref_regex}$', '', pref)
-        reg = re.compile(f'^{_pref}{pref_regex}') if not omit_mode else re.compile(f'^{_pref}{pref_regex}?')
-        yield pref, reg
+def get_prefecture_regexes(prefecture_names: list, omit_mode: bool = False) -> list:
+    prefecture_regex = '([都道府県])'
+    for prefecture_name in prefecture_names:
+        _prefecture_name = re.sub(f'{prefecture_regex}$', '', prefecture_name)
+        reg = re.compile(f'^{_prefecture_name}{prefecture_regex}') if not omit_mode else re.compile(f'^{_prefecture_name}{prefecture_regex}?')
+        yield prefecture_name, reg
 
 
-def getCityRegexes(pref: str, cities: list):
+def get_city_regexes(pref: str, cities: list) -> list:
     cities.sort(key=len)
 
     for city in cities:
-        _city = toRegex(city)
+        _city = to_regex(city)
         if re.match('.*?([町村])$', city) is not None:
             _city = re.sub('(.+?)郡', '(\\1郡)?', _city)
         yield city, re.compile(f'^{_city}')
 
 
 @cached(cache=TTLCache(maxsize=300, ttl=60 * 60 * 24 * 7))
-def getTowns(pref: str, city: str, endpoint: str):
+def getTowns(pref: str, city: str, endpoint: str) -> list:
     global cache_towns
 
     town_endpoint = '/'.join([
@@ -76,8 +77,8 @@ def getTowns(pref: str, city: str, endpoint: str):
     return cache_towns[endpoint_url]
 
 
-def get_town_regexes(pref: str, city: str, endpoint):
-    def getChomeRegex(match_value: str):
+def get_town_regexes(pref: str, city: str, endpoint: str) -> list:
+    def get_normalized_chome_regex(match_value: str) -> str:
         regexes = [re.sub('(丁目?|番([町丁])|条|軒|線|([のノ])町|地割)', '', match_value)]
 
         if re.match('^壱', match_value) is not None:
@@ -99,18 +100,18 @@ def get_town_regexes(pref: str, city: str, endpoint):
 
         return _regex
 
-    def towns_length(api_town):
+    def towns_length(api_town: dict) -> int:
         # 大字で始まる場合、優先度を低く設定する。
         town_len = len(api_town['town'])
         town_len = town_len - 2 if str(api_town['town']).startswith('大字') else town_len
         return town_len
 
-    def isKanjiNumberFollewedByCho(target_town_name):
+    def is_kanji_number_follewed_by_cho(target_town_name: str) -> bool:
         x_cho = re.match('.町', target_town_name)
         if not x_cho:
             return False
         else:
-            kanji_numbers = findKanjiNumbers(x_cho.group())
+            kanji_numbers = find_kanji_numbers(x_cho.group())
             return len(kanji_numbers) > 0
 
     api_pre_towns = getTowns(pref, city, endpoint)
@@ -135,7 +136,7 @@ def get_town_regexes(pref: str, city: str, endpoint):
         if (
             townAddr not in api_towns_set and
             f'大字{townAddr}' not in api_towns_set and   # 大字は省略されるため、大字〇〇と〇〇町がコンフリクトする。このケースを除外
-            not isKanjiNumberFollewedByCho(originalTown)):
+            not is_kanji_number_follewed_by_cho(originalTown)):
 
             # エイリアスとして町なしのパターンを登録
             dict_town = town.copy()
@@ -154,9 +155,9 @@ def get_town_regexes(pref: str, city: str, endpoint):
         _town = re.sub('大?字', '(大?字)?', _town)
 
         for replace_town in re.finditer('([壱一二三四五六七八九十]+)(丁目?|番([町丁])|条|軒|線|([のノ])町|地割)', _town):
-            _town = re.sub(replace_town.group(), getChomeRegex(replace_town.group()), _town)
+            _town = re.sub(replace_town.group(), get_normalized_chome_regex(replace_town.group()), _town)
 
-        _town = toRegex(_town)
+        _town = to_regex(_town)
 
         return_town = {}
         if 'originalTown' in town:
@@ -171,8 +172,8 @@ def get_town_regexes(pref: str, city: str, endpoint):
     return town_regexes
 
 
-def replace_addr(addr: str):
-    def replace_1(match_value: str):
+def replace_addr(addr: str) -> str:
+    def replace_1(match_value: str) -> str:
         for num in list(re.finditer('([0-9]+)', match_value)):
             match_value = match_value.replace(num.group(), kanjize.int2kanji(int(num.group())))
         return match_value
@@ -198,13 +199,13 @@ def replace_addr(addr: str):
 
     return addr.strip()
 
-def jis_kanji_regexes():
+def jis_kanji_regexes() -> Generator[Tuple[Pattern, str, str], None, None]:
     for old_kanji, new_kanji in zip(JIS_OLD_KANJI, JIS_NEW_KANJI):
         regex = re.compile(f'{old_kanji}|{new_kanji}')
         yield regex, old_kanji, new_kanji
 
 
-def jisKanji(value: str):
+def jis_kanji_to_both_forms(value: str) -> str:
     _value = value
     for reg, old_kanji, new_kanji in jis_kanji_regexes():
         pattern = re.compile(reg)
@@ -212,7 +213,7 @@ def jisKanji(value: str):
     return _value
 
 
-def toRegex(value: str):
+def to_regex(value: str) -> str:
 
     # 以下なるべく文字数が多いものほど上にすること
     patterns = [
@@ -249,12 +250,12 @@ def toRegex(value: str):
         value = pattern[0].sub('({})'.format(pattern[0].pattern), value)
 
 
-    value = jisKanji(value)
+    value = jis_kanji_to_both_forms(value)
 
     return value
 
 
-def normalizeTownName(addr: str, pref: str, city: str, endpoint: str):
+def normalize_town_name(addr: str, pref: str, city: str, endpoint: str) -> Optional[Dict[str, str]]:
     # アドレスの前後の空白を削除する
     addr = addr.strip()
 
