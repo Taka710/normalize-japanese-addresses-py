@@ -1069,7 +1069,6 @@ def test_normalize_0175():
 def test_normalize_0176():
     # 東京都荒川区町屋５丁目 の町を省略した場合
     res = normalize('東京都荒川区屋５丁目')
-    print(res)
     assert res['town'] != '町屋５丁目'
     assert res['level'] == 2
 
@@ -1156,3 +1155,19 @@ def test_normalize_190():
     res = normalize('大分県大分市田中町3丁目1-12')
     assert res['lat'] is None
     assert res['lng'] is None
+
+# 漢数字の正規化の改善
+def test_normalize_191():
+    assert normalize('和歌山県東牟婁郡串本町串本千二三四') == \
+        {"pref": "和歌山県", "city": "東牟婁郡串本町", "town": "串本", "addr": "1234",
+         "lat": 33.470358, "lng": 135.779952, "level": 3}
+
+def test_normalize_192():
+    assert normalize('和歌山県東牟婁郡串本町串本千二百三四') == \
+        {"pref": "和歌山県", "city": "東牟婁郡串本町", "town": "串本", "addr": "1234", 
+         "lat": 33.470358, "lng": 135.779952, "level": 3}
+
+def test_normalize_193():
+    assert normalize('和歌山県東牟婁郡串本町串本千二百三十四') == \
+        {"pref": "和歌山県", "city": "東牟婁郡串本町", "town": "串本", "addr": "1234", 
+         "lat": 33.470358, "lng": 135.779952, "level": 3}
