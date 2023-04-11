@@ -1171,3 +1171,9 @@ def test_normalize_193():
     assert normalize('和歌山県東牟婁郡串本町串本千二百三十四') == \
         {"pref": "和歌山県", "city": "東牟婁郡串本町", "town": "串本", "addr": "1234", 
          "lat": 33.470358, "lng": 135.779952, "level": 3}
+
+# 弥/彌の正規化に対応
+def test_normalize_194():
+    assert normalize('愛知県名古屋市瑞穂区弥富町') == \
+        {"pref": "愛知県", "city": "名古屋市瑞穂区", "town": "彌富町", "addr": "",
+            "lat": 35.132011, "lng": 136.955457, "level": 3}
