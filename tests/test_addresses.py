@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -30,8 +32,10 @@ for _, address in addresses.iterrows():
 
     testData.append([addr, pref, city, town, other])
 
+def generate_ids():
+    return ["csv test " for data in testData]
 
-@pytest.mark.parametrize("addr, pref, city, town, other", testData)
+@pytest.mark.parametrize("addr, pref, city, town, other", testData,  ids=generate_ids())
 def test_address(addr: str, pref: str, city: str, town: str, other: str):
     level = 0
 

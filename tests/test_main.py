@@ -1093,87 +1093,118 @@ def test_normalize_0179():
     assert res["city"] == "つくば市"
 
 # 番地・号の分離：京都の住所では「一号｜1号..」などが「一番町」に正規化されてはいけない
-def test_normalize_180():
+def test_normalize_0180():
     res = normalize('京都府京都市上京区主計町一番一号')
     assert res['town'] != '一番町'
     assert res['town'] == '主計町'
     assert res['addr'] == '1-1'
 
-def test_normalize_181():
+def test_normalize_0181():
     res = normalize('京都府京都市上京区主計町二番二号')
     assert res['town'] != '二番町'
     assert res['town'] == '主計町'
     assert res['addr'] == '2-2'
 
-def test_normalize_182():
+def test_normalize_0182():
     res = normalize('京都府京都市上京区主計町三番三号')
     assert res['town'] != '三番町'
     assert res['town'] == '主計町'
     assert res['addr'] == '3-3'
 
-def test_normalize_183():
+def test_normalize_0183():
     res = normalize('京都府京都市上京区中務町５４３番２１号')
     assert res['town'] != '一番町'
     assert res['town'] == '中務町'
     assert res['addr'] == '543-21'
 
-def test_normalize_184():
+def test_normalize_0184():
     res = normalize('京都府京都市上京区晴明町1番３号')
     assert res['town'] != '三番町'
     assert res['town'] == '晴明町'
     assert res['addr'] == '1-3'
 
-def test_normalize_185():
+def test_normalize_0185():
     res = normalize('京都府京都市上京区主計町1番地3')
     assert res['town'] == '主計町'
     assert res['addr'] == '1-3'
 
-def test_normalize_186():
+def test_normalize_0186():
     res = normalize('京都府京都市上京区主計町123番')
     assert res['town'] == '主計町'
     assert res['addr'] == '123'
 
-def test_normalize_187():
+def test_normalize_0187():
     res = normalize('京都府京都市上京区主計町123番地')
     assert res['town'] == '主計町'
     assert res['addr'] == '123'
 
 # 京都府京都市上京区主計町1番2-403号 建物名の省略と部屋番号の表記のケース
-def test_normalize_188():
+def test_normalize_0188():
     res = normalize('京都府京都市上京区主計町1番2-403号')
     assert res['town'] == '主計町'
     assert res['addr'] == '1-2-403号'
 
-def test_normalize_189():
+def test_normalize_0189():
     res = normalize('京都府京都市上京区主計町1番1号おはようビル301号室')
     assert res['town'] != '一番町'
     assert res['town'] == '主計町'
     assert res['addr'] == '1-1 おはようビル301号室'
 
 # latとlngのデータがないときはNoneを返す
-def test_normalize_190():
+def test_normalize_0190():
     res = normalize('大分県大分市田中町3丁目1-12')
     assert res['lat'] is None
     assert res['lng'] is None
 
 # 漢数字の正規化の改善
-def test_normalize_191():
+def test_normalize_0191():
     assert normalize('和歌山県東牟婁郡串本町串本千二三四') == \
         {"pref": "和歌山県", "city": "東牟婁郡串本町", "town": "串本", "addr": "1234",
          "lat": 33.470358, "lng": 135.779952, "level": 3}
 
-def test_normalize_192():
+def test_normalize_0192():
     assert normalize('和歌山県東牟婁郡串本町串本千二百三四') == \
         {"pref": "和歌山県", "city": "東牟婁郡串本町", "town": "串本", "addr": "1234", 
          "lat": 33.470358, "lng": 135.779952, "level": 3}
 
-def test_normalize_193():
+def test_normalize_0193():
     assert normalize('和歌山県東牟婁郡串本町串本千二百三十四') == \
         {"pref": "和歌山県", "city": "東牟婁郡串本町", "town": "串本", "addr": "1234", 
          "lat": 33.470358, "lng": 135.779952, "level": 3}
 
 # 弥/彌の正規化に対応
-def test_normalize_194():
+def test_normalize_0194():
     assert normalize('愛知県名古屋市瑞穂区弥富町') == \
         {"pref": "愛知県", "city": "名古屋市瑞穂区", "town": "彌富町", "addr": "",
             "lat": 35.132011, "lng": 136.955457, "level": 3}
+
+# 京都府京都市下京区西中筋通北小路通上る丸屋町 京都の通り名削除と町の省略がコンフリクトするケース
+def test_normalize_0195():
+    res = normalize('京都府京都市下京区西中筋通北小路通上る丸屋町') 
+    assert res['city'] == '京都市下京区'
+    assert res['town'] != '北小路町'
+    assert res['addr'] == '丸屋町'
+
+
+# 京都府京都市下京区油小路通高辻下ル麓町123
+def test_normalize_0196():
+    res = normalize('京都府京都市下京区油小路通高辻下ル麓町123')
+    assert res['city'] == '京都市下京区'
+    assert res['town'] == '麓町'
+    assert res['addr'] == '123'
+
+
+# 番地・号の分離: 京都の住所では「一号|1号..」などが「一番町」に正規化されてはいけない
+# 京都府京都市上京区あああ通り主計町1番2-403号 通り名を含むケース
+def test_normalize_0197():
+    res = normalize('京都府京都市上京区あああ通り主計町1番2-403号')
+    assert res['city'] == '京都市上京区'
+    assert res['town'] == '主計町'
+    assert res['addr'] == '1-2-403号'
+
+# 京都以外の字は正しく分離される
+def test_normalize_0198():
+    res = normalize('愛知県名古屋市緑区鳴海町字アイウエオ100番200号')
+    assert res['town'] == '鳴海町'
+    assert res['addr'] == '字アイウエオ100-200'
+    assert res['level'] == 3

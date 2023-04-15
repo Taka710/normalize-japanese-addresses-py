@@ -10,7 +10,6 @@ from .library.regex import (
     get_city_regexes,
     replace_addr,
     normalize_town_name,
-    MATCH_BANCHI_GO_PATTERN,
 )
 from .library.patchAddr import patch_addr
 from .library.utils import zenkaku_to_hankaku
@@ -263,13 +262,6 @@ def normalize_after_town_names(
     lat = None
     lng = None
 
-    banchiGoQueue = []
-    for pattern in MATCH_BANCHI_GO_PATTERN:
-        match = re.match(pattern, addr)
-        if match is not None:
-            banchiGoQueue.append(match[0])
-            addr = addr.replace(match[0], "")
-
     normalized = normalize_town_name(addr, pref, city, endpoint)
     if normalized is not None:
         _town = normalized["town"]
@@ -277,8 +269,6 @@ def normalize_after_town_names(
         addr = normalized["addr"]
         lat = normalized["lat"]
         lng = normalized["lng"]
-
-    addr = "".join(banchiGoQueue) + addr
 
     addr = replace_addr(addr)
 
