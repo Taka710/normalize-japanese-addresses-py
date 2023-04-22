@@ -10,7 +10,8 @@ def api_fetch(endpoint: str = '') -> requests.Response:
         filepath = urllib.parse.unquote(endpoint.replace("file://", ""))
         with open(filepath, 'rb') as fp:
             res = requests.Response()
-            res.raw = fp
+            res._content = fp.read()
+            res.status_code = 200
             return res
     else:
         raise ValueError("Invalid endpoint type")
