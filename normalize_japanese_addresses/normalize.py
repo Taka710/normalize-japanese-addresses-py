@@ -144,6 +144,18 @@ def remove_spaces_before_town_city_district_name(addr: str) -> str:
     return addr
 
 
+def remove_spaces_before_ward_or_gun(addr: str) -> str:
+    """
+    区、郡以前のスペースは全て削除する
+    """
+    hyphen_iter = re.finditer("(.+)((郡.+(町|村))|((市|巿).+(区|區)))", addr)
+    for m in hyphen_iter:
+        from_value = m.group()
+        replace_value = from_value.replace(SPACE, "")
+        addr = addr.replace(from_value, replace_value)
+    return addr
+
+
 def remove_leading_spaces_before_the_first_arabic_numeral(addr: str) -> str:
     """
     最初のアラビア数字の前にあるスペースを削除する
@@ -173,6 +185,9 @@ def preprocessing_address(addr: str) -> str:
 
     # 町丁目名以前のスペースはすべて削除
     addr = remove_spaces_before_town_city_district_name(addr)
+
+    # // 区、郡以前のスペースはすべて削除
+    addr = remove_spaces_before_ward_or_gun(addr)
 
     # 1番はじめに出てくるアラビア数字以前のスペースを削除
     addr = remove_leading_spaces_before_the_first_arabic_numeral(addr)

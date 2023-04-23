@@ -1208,3 +1208,28 @@ def test_normalize_0198():
     assert res['town'] == '鳴海町'
     assert res['addr'] == '字アイウエオ100-200'
     assert res['level'] == 3
+
+# 途中にスペースを含むケース
+# 京都府京都市　下京区上之町999
+def test_normalize_0199():
+    res = normalize('京都府京都市　下京区上之町999')
+    assert res['pref'] == '京都府'
+    assert res['city'] == '京都市下京区'
+    assert res['town'] == '上之町'
+    assert res['addr'] == '999'
+
+# 宮城県仙台市 若林区土樋999
+def test_normalize_0200():
+    res = normalize('宮城県仙台市 若林区土樋999')
+    assert res['pref'] == '宮城県'
+    assert res['city'] == '仙台市若林区'
+    assert res['town'] == '土樋'
+    assert res['addr'] == '999'
+
+# 青森県上北郡 横浜町字三保野888
+def test_normalize_0201():
+    res = normalize('青森県上北郡 横浜町字三保野888')
+    assert res['pref'] == '青森県'
+    assert res['city'] == '上北郡横浜町'
+    assert res['town'] == '字三保野'
+    assert res['addr'] == '888'
