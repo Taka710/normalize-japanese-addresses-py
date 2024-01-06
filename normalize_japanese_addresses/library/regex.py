@@ -1,11 +1,14 @@
 import re
 import json
 import urllib.parse
-import copy
 from typing import List, Dict, Any, Optional, Union, Generator, Tuple, Callable, Pattern
 
 import kanjize
-from cachetools import cached, TTLCache
+from cachetools import TTLCache
+import time
+
+import functools
+from functools import wraps
 
 from .api import api_fetch
 from .utils import kan2num, find_kanji_numbers
@@ -32,19 +35,37 @@ JIS_NEW_KANJI = (
     )
 )
 
-cache_prefecture = {}
-cache_towns = {}
+ttl = 60 * 60 * 24 * 7
+cache_prefecture = TTLCache(maxsize=300, ttl=ttl)
+cache_cities = {}
+cache_towns = TTLCache(maxsize=300, ttl=ttl)
 
 
-@cached(cache=TTLCache(maxsize=300, ttl=60 * 60 * 24 * 7))
+def set_ttl(ttl_value: int) -> None:
+    global ttl
+    global cache_prefecture
+    global cache_towns
+
+    ttl = ttl_value
+    cache_prefecture = TTLCache(maxsize=300, ttl=ttl)
+    cache_prefecture.clear()
+    cache_towns = TTLCache(maxsize=300, ttl=ttl)
+    cache_towns.clear()
+    clear_cache_of_cities()
+
+def clear_cache_of_cities() -> None:
+    global cache_cities
+    
+    cache_cities.clear()
+
 def get_prefectures(endpoint: str) -> dict:
     global cache_prefecture
     endpoint_url = f"{endpoint}.json"
-    if endpoint_url not in cache_prefecture:
-        cache_prefecture[endpoint_url] = api_fetch(f"{endpoint}.json")
-
-    return cache_prefecture[endpoint_url]
-
+    prefectures = cache_prefecture.get(endpoint_url)
+    if prefectures is None:
+        prefectures = json.loads(api_fetch(endpoint_url).text)
+        cache_prefecture[endpoint_url] = prefectures
+    return prefectures
 
 def get_prefecture_regexes(prefecture_names: list, omit_mode: bool = False) -> list:
     prefecture_regex = "([都道府県])"
@@ -57,19 +78,45 @@ def get_prefecture_regexes(prefecture_names: list, omit_mode: bool = False) -> l
         )
         yield prefecture_name, reg
 
+def cities_list_to_tuple(lst) -> tuple:
+    # citiesのリストについては、事前に長さでソートする必要があるためTupleに変換する前に実行する
+    lst.sort(key=len)
+    return tuple(lst)
 
-def get_city_regexes(pref: str, cities: list) -> list:
-    cities.sort(key=len)
+
+def cache_cities_with_ttl() -> Callable:
+    global cache_cities
+    
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            # リスト引数をタプルに変換してキャッシュする
+            args_key = tuple(cities_list_to_tuple(arg) if isinstance(arg, list) else arg for arg in args)
+            if args_key in cache_cities:
+                result, timestamp = cache_cities[args_key]
+                if time.time() - timestamp <= ttl:
+                    return result
+            result = func(*args, **kwargs)
+            cache_cities[args_key] = (result, time.time())
+            return result
+
+        return wrapper
+
+    return decorator
+
+@cache_cities_with_ttl()
+def get_city_regexes(pref: str, cities: list) -> tuple:
+    results = []
 
     for city in cities:
         _city = to_regex(city)
         if re.match(".*?([町村])$", city) is not None:
             _city = re.sub("(.+?)郡", "(\\1郡)?", _city)
-        yield city, re.compile(f"^{_city}")
+        results.append((city, re.compile(f"^{_city}")))
 
+    return results
 
-@cached(cache=TTLCache(maxsize=300, ttl=60 * 60 * 24 * 7))
-def getTowns(pref: str, city: str, endpoint: str) -> list:
+def get_towns(pref: str, city: str, endpoint: str) -> list:
     global cache_towns
 
     town_endpoint = "/".join(
@@ -81,11 +128,13 @@ def getTowns(pref: str, city: str, endpoint: str) -> list:
     )
 
     endpoint_url = f"{town_endpoint}.json"
-    if endpoint_url not in cache_towns:
-        cache_towns[endpoint_url] = list(json.loads((api_fetch(endpoint_url)).text))
+    towns = cache_towns.get(endpoint_url)
+    if towns is None:
+        towns = list(json.loads((api_fetch(endpoint_url)).text))
+        cache_towns[endpoint_url] = towns
+        print(api_fetch(endpoint_url))
 
-    return cache_towns[endpoint_url]
-
+    return towns
 
 def get_town_regexes(pref: str, city: str, endpoint: str) -> list:
     def get_normalized_chome_regex(match_value: str) -> str:
@@ -124,7 +173,7 @@ def get_town_regexes(pref: str, city: str, endpoint: str) -> list:
             kanji_numbers = find_kanji_numbers(x_cho.group())
             return len(kanji_numbers) > 0
 
-    api_pre_towns = getTowns(pref, city, endpoint)
+    api_pre_towns = get_towns(pref, city, endpoint)
     api_towns_set = [x["town"] for x in api_pre_towns]
     api_towns = []
 

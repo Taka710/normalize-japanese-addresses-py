@@ -10,6 +10,7 @@ from .library.regex import (
     get_city_regexes,
     replace_addr,
     normalize_town_name,
+    set_ttl,
 )
 from .library.patchAddr import patch_addr
 from .library.utils import zenkaku_to_hankaku
@@ -42,7 +43,7 @@ def normalize(address: str, **kwargs) -> str:
     addr = preprocessing_address(addr)
 
     # 都道府県情報を取得
-    prefectures = json.loads(get_prefectures(endpoint).text)
+    prefectures = get_prefectures(endpoint)
     prefectures_list: list = list(prefectures.keys())
 
     # 都道府県の正規化
@@ -86,6 +87,9 @@ def set_options(options: dict) -> tuple:
     """
     level = options.get("level", DEFAULT_LEVEL)
     endpoint = options.get("endpoint", DEFAULT_ENDPOINT)
+    option_ttl = options.get("ttl", None)
+    if option_ttl is not None and isinstance(option_ttl, int):
+        set_ttl(option_ttl)
     return level, endpoint
 
 
@@ -202,7 +206,7 @@ def normalize_prefecture_names(
     都道府県名を正規化する
     """
     pref = ""
-    for _pref, reg in get_prefecture_regexes(prefectures_list):
+    for _pref, reg in get_prefecture_regexes(prefectures_list, False):
         if reg.match(addr):
             pref = _pref
             addr = addr[len(reg.match(addr)[0]) :]
@@ -290,7 +294,7 @@ def normalize_after_town_names(
     return addr, town, lat, lng
 
 
-def set_level(pref, city, town, ref_level):
+def set_level(pref, city, town, ref_level) -> int:
     """
     住所のレベルを設定する
     """
