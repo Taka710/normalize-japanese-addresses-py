@@ -1252,3 +1252,10 @@ def test_normalize_0203():
     for i in range(len(results) -1):
         print(results[i], results[i+1])
         assert results[i] == results[i+1]
+
+# 旧漢字対応 (麩 -> 麸)
+def test_normalize_0204():
+    res = normalize('愛知県津島市池麩町')
+    assert res['town'] == '池麸町'
+    assert res['level'] == 3
+    
