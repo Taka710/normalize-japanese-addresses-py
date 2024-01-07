@@ -132,7 +132,6 @@ def get_towns(pref: str, city: str, endpoint: str) -> list:
     if towns is None:
         towns = list(json.loads((api_fetch(endpoint_url)).text))
         cache_towns[endpoint_url] = towns
-        print(api_fetch(endpoint_url))
 
     return towns
 
@@ -179,7 +178,6 @@ def get_town_regexes(pref: str, city: str, endpoint: str) -> list:
 
     # 京都かどうかを判定
     is_kyoto = re.match("^京都市", city) is not None
-    print(is_kyoto, city)
     # 町丁目に「町」が含まれるケースへの対応
     # 通常は「○○町」のうち「町」の省略を許容し同義語として扱うが、まれに自治体内に「○○町」と「○○」が共存しているケースがある。
     # この場合は町の省略は許容せず、入力された住所は書き分けられているものとして正規化を行う。
@@ -359,14 +357,6 @@ def normalize_town_name(
                 regex = re.compile(f"{regex_prefix}{pattern}")
                 match = regex.match(addr)
                 if match:
-                    print(
-                        pref,
-                        city,
-                        town,
-                        addr,
-                        regex.pattern,
-                        addr[len(match.group()) :],
-                    )
                     # 正規表現にマッチした場合、辞書型で町の名前、住所、緯度、経度を返す
                     return {
                         "town": town,
