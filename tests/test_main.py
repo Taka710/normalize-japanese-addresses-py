@@ -1233,3 +1233,9 @@ def test_normalize_0201():
     assert res['city'] == '上北郡横浜町'
     assert res['town'] == '字三保野'
     assert res['addr'] == '888'
+
+# '町丁目名が判別できなかった場合、残った住所には漢数字->数字などの変換処理を施さない
+def test_normalize_0202():
+    res = normalize('北海道滝川市一の坂町西')
+    assert res['town'] == ''
+    assert res['addr'] == '一の坂町西'
