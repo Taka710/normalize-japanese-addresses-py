@@ -1258,4 +1258,9 @@ def test_normalize_0204():
     res = normalize('愛知県津島市池麩町')
     assert res['town'] == '池麸町'
     assert res['level'] == 3
-    
+
+# 柿碕町|柿さき町
+def test_normalize_0205():
+    res = normalize('愛知県安城市柿碕町')
+    assert res['town'] == '柿さき町'
+    assert res['level'] == 3
