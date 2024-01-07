@@ -257,7 +257,7 @@ def replace_addr(addr: str) -> str:
             lambda m: "{} {}".format(m.group(1), m.group(5)),
         ),
         (
-            re.compile("([0-9〇一二三四五六七八九十百千]+)(番地?)([(0-9〇一二三四五六七八九十百千]+)号?"),
+            re.compile("([0-9〇一二三四五六七八九十百千]+)\\s*(番地?)\\s*([(0-9〇一二三四五六七八九十百千]+)\\s*号?"),
             lambda m: "{}-{}".format(m.group(1), m.group(3)),
         ),
         (re.compile("([0-9〇一二三四五六七八九十百千]+)番地?"), r"\1"),

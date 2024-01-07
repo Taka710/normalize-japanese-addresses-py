@@ -1234,8 +1234,21 @@ def test_normalize_0201():
     assert res['town'] == '字三保野'
     assert res['addr'] == '888'
 
-# '町丁目名が判別できなかった場合、残った住所には漢数字->数字などの変換処理を施さない
+# 町丁目名が判別できなかった場合、残った住所には漢数字->数字などの変換処理を施さない
 def test_normalize_0202():
     res = normalize('北海道滝川市一の坂町西')
     assert res['town'] == ''
     assert res['addr'] == '一の坂町西'
+
+# 番地号部分にスペースが含まれていても正規化する
+def test_normalize_0203():
+    addresses =  [
+      '港区新橋五丁目  24   番  8  号',
+      '港区新橋五丁目24 番 8 号',
+      '港区新橋５－２４－８',
+    ]
+
+    results = [normalize(address) for address in addresses]
+    for i in range(len(results) -1):
+        print(results[i], results[i+1])
+        assert results[i] == results[i+1]
