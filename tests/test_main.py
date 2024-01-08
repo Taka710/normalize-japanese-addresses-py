@@ -1281,3 +1281,17 @@ def test_normalize_0208():
     res = normalize('東京都千代田区永田町1-2-3-レジデンス億万101')
     assert res == {"pref": "東京都", "city": "千代田区", "town": "永田町一丁目", "addr": "2-3-レジデンス億万101", 
                    "lat": 35.675895, "lng": 139.746306, "level": 3}
+
+# 漢数字の小字のケース（kanjize, kanjize_error_kanji_to_intのエラー回避確認）
+def test_normalize_0209():
+    res = normalize('愛知県豊田市西丹波町三五十')
+    assert res['town'] == '西丹波町'
+    assert res['addr'] == '35'
+    assert res['level'] == 3
+
+# 広島県府中市栗柄町名字八五十2459（kanjize, kanjize_error_kanji_to_intのエラー回避確認）
+def test_normalize_0210():
+    res = normalize('広島県府中市栗柄町名字八五十2459')
+    assert res['town'] == '栗柄町'
+    assert res['addr'] == '名字852459'
+    assert res['level'] == 3

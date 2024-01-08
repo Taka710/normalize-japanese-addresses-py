@@ -88,9 +88,13 @@ def kan2num(value: str) -> str:
                 )
 
             return number + numbers["千"]
-
-    for fromValue in find_kanji_numbers(value):
-        value = value.replace(fromValue, str(_kanji_to_integer(fromValue)))
+    
+    # エラーが発生した場合、そのままの文字列を返す
+    try:
+        for fromValue in find_kanji_numbers(value):
+            value = value.replace(fromValue, str(_kanji_to_integer(fromValue)))
+    except Exception as e:
+        pass
 
     return value
 
