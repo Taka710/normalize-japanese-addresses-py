@@ -1275,3 +1275,9 @@ def test_normalize_0207():
     res = normalize('東京都文京区小石川1ビル名')
     assert res['town'] == '小石川一丁目'
     assert res['addr'] == 'ビル名'
+
+# 東京都千代田区永田町1-2-3-レジデンス億万101 (号の後にハイフンで漢数字末尾に含んだマンション名が続き、号室が数値の場合
+def test_normalize_0208():
+    res = normalize('東京都千代田区永田町1-2-3-レジデンス億万101')
+    assert res == {"pref": "東京都", "city": "千代田区", "town": "永田町一丁目", "addr": "2-3-レジデンス億万101", 
+                   "lat": 35.675895, "lng": 139.746306, "level": 3}

@@ -287,7 +287,7 @@ def replace_addr(addr: str) -> str:
         ),
         (re.compile("([0-9〇一二三四五六七八九十百千]+)-"), lambda m: kan2num(m.group())),
         (re.compile("-([0-9〇一二三四五六七八九十百千]+)"), lambda m: kan2num(m.group())),
-        (re.compile("-[^0-9]+([0-9〇一二三四五六七八九十百千]+)"), lambda m: kan2num(m.group())),
+        (re.compile("-[^0-9]([0-9〇一二三四五六七八九十百千]+)"), lambda m: kan2num(m.group())),
         (re.compile("([0-9〇一二三四五六七八九十百千]+)$"), lambda m: kan2num(m.group())),
     ]
 
