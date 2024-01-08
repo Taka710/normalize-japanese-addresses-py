@@ -234,9 +234,24 @@ def get_town_regexes(pref: str, city: str, endpoint: str) -> list:
         if "originalTown" in town:
             return_town["originalTown"] = town["originalTown"]
         return_town["town"] = town["town"]
-
         town_regexes.append([return_town, _town, town["lat"], town["lng"]])
 
+    # X丁目の丁目なしの数字だけ許容するため、最後に数字だけ追加していく
+    for town in towns:  
+        chome_match = re.search(r'([^一二三四五六七八九十]+)([一二三四五六七八九十]+)(丁目?)', town["town"])
+        if chome_match is None:
+            continue
+
+        chome_name_part = chome_match.group(1)
+        chome_number_kanji = chome_match.group(2)
+        chome_number = kan2num(chome_number_kanji)
+        chome_pattern = f"^{chome_name_part}({chome_number_kanji}|{chome_number})"
+        return_town = {}
+        if "originalTown" in town:
+            return_town["originalTown"] = town["originalTown"]
+        return_town["town"] = town["town"]
+        town_regexes.append([return_town, chome_pattern, town["lat"], town["lng"]])
+    
     return town_regexes
 
 
@@ -342,7 +357,7 @@ def normalize_town_name(
 ) -> Optional[Dict[str, str]]:
     # アドレスの前後の空白を削除する
     addr = addr.strip()
-
+    
     # アドレスの先頭が"大字"で始まっていた場合は削除
     addr = re.sub("^大字", "", addr)
 
@@ -378,6 +393,6 @@ def normalize_town_name(
                         "lat": lat,
                         "lng": lng,
                     }
-
+        
     # 正規表現にマッチしなかった場合は None を返す
     return None

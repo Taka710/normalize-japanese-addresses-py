@@ -1250,7 +1250,6 @@ def test_normalize_0203():
 
     results = [normalize(address) for address in addresses]
     for i in range(len(results) -1):
-        print(results[i], results[i+1])
         assert results[i] == results[i+1]
 
 # 旧漢字対応 (麩 -> 麸)
@@ -1264,3 +1263,15 @@ def test_normalize_0205():
     res = normalize('愛知県安城市柿碕町')
     assert res['town'] == '柿さき町'
     assert res['level'] == 3
+
+# 丁目の数字だけあるときは正しく「一丁目」まで補充できる
+def test_normalize_0206():
+    res = normalize('東京都文京区小石川1')
+    assert res['town'] == '小石川一丁目'
+    assert res['addr'] == ''
+
+# 丁目の数字だけあるときは正しく「一丁目」まで補充できる（以降も対応)
+def test_normalize_0207():
+    res = normalize('東京都文京区小石川1ビル名')
+    assert res['town'] == '小石川一丁目'
+    assert res['addr'] == 'ビル名'
