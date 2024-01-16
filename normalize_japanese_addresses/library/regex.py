@@ -244,7 +244,7 @@ def replace_addr(addr: str) -> str:
     def replace_1(match_value: str) -> str:
         for num in list(re.finditer("([0-9]+)", match_value)):
             match_value = match_value.replace(
-                num.group(), kanjize.int2kanji(int(num.group()))
+                num.group(), kanjize.number2kanji(int(num.group()))
             )
         return match_value
 
