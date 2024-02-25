@@ -175,6 +175,7 @@ def get_town_regexes(pref: str, city: str, endpoint: str) -> list:
     api_pre_towns = get_towns(pref, city, endpoint)
     api_towns_set = [x["town"] for x in api_pre_towns]
     api_towns = []
+    townAddr = ""
 
     # 京都かどうかを判定
     is_kyoto = re.match("^京都市", city) is not None
