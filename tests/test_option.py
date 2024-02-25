@@ -28,3 +28,10 @@ def test_normalize_add_0004():
            {"pref": "北海道", "city": "札幌市西区", "town": "二十四軒二条二丁目", "addr": "3-3",
             "lat": 43.074273, "lng": 141.315099, "level": 3}
 
+# issue #8
+# @geolonia/normalize-japanese-addressesで実行した結果と同じになることを確認する
+# {pref: '北海道', city: '札幌市中央区', town: '宮の森四条十丁目', addr: '', level: 3}
+def test_normalize_add_0005():
+    assert normalize('北海道札幌市中央区宮の森４条１０丁目') == \
+              {"pref": "北海道", "city": "札幌市中央区", "town": "宮の森四条十丁目", "addr": "",
+                "lat": 43.060356, "lng": 141.298776, "level": 3}
