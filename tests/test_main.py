@@ -1286,7 +1286,7 @@ def test_normalize_0208():
 def test_normalize_0209():
     res = normalize('愛知県豊田市西丹波町三五十')
     assert res['town'] == '西丹波町'
-    assert res['addr'] == '35'
+    assert res['addr'] == '350'
     assert res['level'] == 3
 
 # 広島県府中市栗柄町名字八五十2459（kanjize, kanjize_error_kanji_to_intのエラー回避確認）
