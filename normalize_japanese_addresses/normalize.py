@@ -289,7 +289,9 @@ def normalize_after_town_names(
         lat = normalized["lat"]
         lng = normalized["lng"]
 
-    addr = replace_addr(addr)
+    # townが取得できた場合にのみ、addrに対する各種の変換処理を行う。(#187)
+    if town != "":
+        addr = replace_addr(addr)
 
     return addr, town, lat, lng
 

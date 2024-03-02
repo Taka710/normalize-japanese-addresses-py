@@ -1233,3 +1233,65 @@ def test_normalize_0201():
     assert res['city'] == '上北郡横浜町'
     assert res['town'] == '字三保野'
     assert res['addr'] == '888'
+
+# 町丁目名が判別できなかった場合、残った住所には漢数字->数字などの変換処理を施さない
+def test_normalize_0202():
+    res = normalize('北海道滝川市一の坂町西')
+    assert res['town'] == ''
+    assert res['addr'] == '一の坂町西'
+
+# 番地号部分にスペースが含まれていても正規化する
+def test_normalize_0203():
+    addresses =  [
+      '港区新橋五丁目  24   番  8  号',
+      '港区新橋五丁目24 番 8 号',
+      '港区新橋５－２４－８',
+    ]
+
+    results = [normalize(address) for address in addresses]
+    for i in range(len(results) -1):
+        assert results[i] == results[i+1]
+
+# 旧漢字対応 (麩 -> 麸)
+def test_normalize_0204():
+    res = normalize('愛知県津島市池麩町')
+    assert res['town'] == '池麸町'
+    assert res['level'] == 3
+
+# 柿碕町|柿さき町
+def test_normalize_0205():
+    res = normalize('愛知県安城市柿碕町')
+    assert res['town'] == '柿さき町'
+    assert res['level'] == 3
+
+# 丁目の数字だけあるときは正しく「一丁目」まで補充できる
+def test_normalize_0206():
+    res = normalize('東京都文京区小石川1')
+    assert res['town'] == '小石川一丁目'
+    assert res['addr'] == ''
+
+# 丁目の数字だけあるときは正しく「一丁目」まで補充できる（以降も対応)
+def test_normalize_0207():
+    res = normalize('東京都文京区小石川1ビル名')
+    assert res['town'] == '小石川一丁目'
+    assert res['addr'] == 'ビル名'
+
+# 東京都千代田区永田町1-2-3-レジデンス億万101 (号の後にハイフンで漢数字末尾に含んだマンション名が続き、号室が数値の場合
+def test_normalize_0208():
+    res = normalize('東京都千代田区永田町1-2-3-レジデンス億万101')
+    assert res == {"pref": "東京都", "city": "千代田区", "town": "永田町一丁目", "addr": "2-3-レジデンス億万101", 
+                   "lat": 35.675895, "lng": 139.746306, "level": 3}
+
+# 漢数字の小字のケース（kanjize, kanjize_error_kanji_to_intのエラー回避確認）
+def test_normalize_0209():
+    res = normalize('愛知県豊田市西丹波町三五十')
+    assert res['town'] == '西丹波町'
+    assert res['addr'] == '350'
+    assert res['level'] == 3
+
+# 広島県府中市栗柄町名字八五十2459（kanjize, kanjize_error_kanji_to_intのエラー回避確認）
+def test_normalize_0210():
+    res = normalize('広島県府中市栗柄町名字八五十2459')
+    assert res['town'] == '栗柄町'
+    assert res['addr'] == '名字852459'
+    assert res['level'] == 3

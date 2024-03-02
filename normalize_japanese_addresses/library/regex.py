@@ -19,7 +19,7 @@ JIS_OLD_KANJI = (
     "罐,勸,觀,歸,犧,擧,狹,驅,莖,經,繼,缺,劍,檢,顯,廣,鑛,碎,劑,參,慘,絲,辭,舍,壽,澁,肅,將,證,乘,疊,孃,觸,寢,圖,穗,樞,齊,攝,戰,潛,雙,莊,裝,藏,續,體,臺,澤,膽,"
     "彈,蟲,廳,鎭,點,燈,盜,獨,貳,霸,賣,髮,祕,佛,變,辯,豐,飜,默,與,譽,謠,覽,獵,勵,齡,勞,壓,爲,隱,衞,鹽,毆,穩,畫,壞,殼,嶽,卷,關,顏,僞,舊,峽,曉,勳,惠,螢,鷄,縣,"
     "險,獻,驗,效,號,濟,册,棧,贊,齒,濕,寫,收,獸,處,稱,奬,淨,繩,讓,囑,愼,粹,隨,數,靜,專,踐,纖,壯,搜,總,臟,墮,帶,瀧,擔,團,遲,晝,聽,遞,轉,當,稻,讀,惱,拜,麥,拔,"
-    "濱,竝,辨,舖,襃,萬,譯,豫,搖,來,龍,壘,隸,戀,樓,鰺,鶯,蠣,攪,竈,灌,諫,頸,礦,蘂,靱,賤,壺,礪,檮,濤,邇,蠅,檜,儘,藪,籠,彌".split(
+    "濱,竝,辨,舖,襃,萬,譯,豫,搖,來,龍,壘,隸,戀,樓,鰺,鶯,蠣,攪,竈,灌,諫,頸,礦,蘂,靱,賤,壺,礪,檮,濤,邇,蠅,檜,儘,藪,籠,彌,麩".split(
         ","
     )
 )
@@ -30,7 +30,7 @@ JIS_NEW_KANJI = (
     "缶,勧,観,帰,犠,挙,狭,駆,茎,経,継,欠,剣,検,顕,広,鉱,砕,剤,参,惨,糸,辞,舎,寿,渋,粛,将,証,乗,畳,嬢,触,寝,図,穂,枢,斉,摂,戦,潜,双,荘,装,蔵,続,体,台,沢,胆,"
     "弾,虫,庁,鎮,点,灯,盗,独,弐,覇,売,髪,秘,仏,変,弁,豊,翻,黙,与,誉,謡,覧,猟,励,齢,労,圧,為,隠,衛,塩,殴,穏,画,壊,殻,岳,巻,関,顔,偽,旧,峡,暁,勲,恵,蛍,鶏,県,"
     "険,献,験,効,号,済,冊,桟,賛,歯,湿,写,収,獣,処,称,奨,浄,縄,譲,嘱,慎,粋,随,数,静,専,践,繊,壮,捜,総,臓,堕,帯,滝,担,団,遅,昼,聴,逓,転,当,稲,読,悩,拝,麦,抜,"
-    "浜,並,弁,舗,褒,万,訳,予,揺,来,竜,塁,隷,恋,楼,鯵,鴬,蛎,撹,竃,潅,諌,頚,砿,蕊,靭,賎,壷,砺,梼,涛,迩,蝿,桧,侭,薮,篭,弥".split(
+    "浜,並,弁,舗,褒,万,訳,予,揺,来,竜,塁,隷,恋,楼,鯵,鴬,蛎,撹,竃,潅,諌,頚,砿,蕊,靭,賎,壷,砺,梼,涛,迩,蝿,桧,侭,薮,篭,弥,麸".split(
         ","
     )
 )
@@ -175,6 +175,7 @@ def get_town_regexes(pref: str, city: str, endpoint: str) -> list:
     api_pre_towns = get_towns(pref, city, endpoint)
     api_towns_set = [x["town"] for x in api_pre_towns]
     api_towns = []
+    townAddr = ""
 
     # 京都かどうかを判定
     is_kyoto = re.match("^京都市", city) is not None
@@ -234,9 +235,24 @@ def get_town_regexes(pref: str, city: str, endpoint: str) -> list:
         if "originalTown" in town:
             return_town["originalTown"] = town["originalTown"]
         return_town["town"] = town["town"]
-
         town_regexes.append([return_town, _town, town["lat"], town["lng"]])
 
+    # X丁目の丁目なしの数字だけ許容するため、最後に数字だけ追加していく
+    for town in towns:  
+        chome_match = re.search(r'([^一二三四五六七八九十]+)([一二三四五六七八九十]+)(丁目?)', town["town"])
+        if chome_match is None:
+            continue
+
+        chome_name_part = chome_match.group(1)
+        chome_number_kanji = chome_match.group(2)
+        chome_number = kan2num(chome_number_kanji)
+        chome_pattern = f"^{chome_name_part}({chome_number_kanji}|{chome_number})"
+        return_town = {}
+        if "originalTown" in town:
+            return_town["originalTown"] = town["originalTown"]
+        return_town["town"] = town["town"]
+        town_regexes.append([return_town, chome_pattern, town["lat"], town["lng"]])
+    
     return town_regexes
 
 
@@ -257,7 +273,7 @@ def replace_addr(addr: str) -> str:
             lambda m: "{} {}".format(m.group(1), m.group(5)),
         ),
         (
-            re.compile("([0-9〇一二三四五六七八九十百千]+)(番地?)([(0-9〇一二三四五六七八九十百千]+)号?"),
+            re.compile("([0-9〇一二三四五六七八九十百千]+)\\s*(番地?)\\s*([(0-9〇一二三四五六七八九十百千]+)\\s*号?"),
             lambda m: "{}-{}".format(m.group(1), m.group(3)),
         ),
         (re.compile("([0-9〇一二三四五六七八九十百千]+)番地?"), r"\1"),
@@ -272,7 +288,7 @@ def replace_addr(addr: str) -> str:
         ),
         (re.compile("([0-9〇一二三四五六七八九十百千]+)-"), lambda m: kan2num(m.group())),
         (re.compile("-([0-9〇一二三四五六七八九十百千]+)"), lambda m: kan2num(m.group())),
-        (re.compile("-[^0-9]+([0-9〇一二三四五六七八九十百千]+)"), lambda m: kan2num(m.group())),
+        (re.compile("-[^0-9]([0-9〇一二三四五六七八九十百千]+)"), lambda m: kan2num(m.group())),
         (re.compile("([0-9〇一二三四五六七八九十百千]+)$"), lambda m: kan2num(m.group())),
     ]
 
@@ -302,6 +318,7 @@ def to_regex(value: str) -> str:
         ("三栄町|四谷三栄町", "(三栄町|四谷三栄町)"),
         ("鬮野川|くじ野川|くじの川", "(鬮野川|くじ野川|くじの川)"),
         ("通り|とおり", "(通り|とおり)"),
+        ("柿碕町|柿さき町", "(柿碕町|柿さき町)"),
         ("埠頭|ふ頭", "(埠頭|ふ頭)"),
         ("番町|番丁", "(番町|番丁)"),
         ("大冝|大宜", "(大冝|大宜)"),
@@ -341,7 +358,7 @@ def normalize_town_name(
 ) -> Optional[Dict[str, str]]:
     # アドレスの前後の空白を削除する
     addr = addr.strip()
-
+    
     # アドレスの先頭が"大字"で始まっていた場合は削除
     addr = re.sub("^大字", "", addr)
 
@@ -377,6 +394,6 @@ def normalize_town_name(
                         "lat": lat,
                         "lng": lng,
                     }
-
+        
     # 正規表現にマッチしなかった場合は None を返す
     return None
